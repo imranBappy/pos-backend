@@ -26,7 +26,7 @@ SECRET_KEY = "django-insecure-pxxq#m5a#f17646-@7e7uwp2%k-v9c^uz50)8vp45%xwqlh$@#
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "apps.outlet",
     "apps.kitchen",
     "apps.product",
+    "apps.accounts"
 ]
 
 
@@ -139,4 +140,13 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
-GRAPHENE = {"SCHEMA": "backend.schema.schema"}
+GRAPHENE = {
+    "SCHEMA": "backend.schema.schema",
+    'MIDDLEWARE': [
+        'graphql_jwt.middleware.JSONWebTokenMiddleware',
+    ],
+}
+AUTHENTICATION_BACKENDS = [
+    'graphql_jwt.backends.JSONWebTokenBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
