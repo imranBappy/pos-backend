@@ -1,13 +1,15 @@
 from django.contrib import admin
-from .models import User
+
 # Register your models here.
+from django.contrib import admin
+from .models import User
+
 
 @admin.register(User)
+
 class UserAdmin(admin.ModelAdmin):
     list_display = [
-        'id',
+        'id', 
         'email', 
-        'name' 
+        'name', 
     ]
-    ordering = ('email',)
-    search_fields = ('email', 'name')

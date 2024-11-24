@@ -16,21 +16,20 @@ class RegisterUser(graphene.Mutation):
         name = graphene.String(required=True)
         email = graphene.String(required=True)
         password = graphene.String(required=True)
-        role = graphene.String(required=True)  # Accepts roles like "CHEF", "WAITER", etc.
 
     success = graphene.Boolean()
     message = graphene.String()
 
     @transaction.atomic
-    def mutate(self, info, name, email, password, role):
-        if role not in UserRole.values:
-            return RegisterUser(success=False, message="Invalid role provided.")
+    def mutate(self, info, name, email, password):
+        # if role not in UserRole.values:
+        #     return RegisterUser(success=False, message="Invalid role provided.")
         
         if CustomUser.objects.filter(email=email).exists():
             return RegisterUser(success=False, message="Email is already registered.")
         
         user = CustomUser.objects.create_user(
-            name=name, email=email, password=password, role=role
+            name=name, email=email, password=password
         )
         user.is_verified = False  # Email verification can be implemented separately
         user.save()
