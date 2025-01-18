@@ -19,9 +19,20 @@ from django.contrib import admin
 from django.urls import path
 from backend.schema import schema
 from graphene_django.views import GraphQLView
+from django.views.decorators.csrf import csrf_exempt
+from apps.product.views import generate_invoice
+from  apps.clients  import views as client_views
+from django.http import HttpResponseForbidden
 
-
+def tenant_admin_view(request):
+    if not request.user.is_authenticated or not request.user.is_admin:
+        return HttpResponseForbidden("Access Denied")
+    return admin.site.urls
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("graphql/", GraphQLView.as_view(graphiql=True, schema=schema)),
+    # path('admin/', tenant_admin_view),
+
+    path("graphql/", csrf_exempt(GraphQLView.as_view(graphiql=True, schema=schema))),
+    path('invoice/<int:order_id>/', generate_invoice, name='generate_invoice'),
+    path('', client_views.index)
 ]

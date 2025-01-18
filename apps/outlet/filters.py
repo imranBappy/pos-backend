@@ -7,4 +7,4 @@ class OutletFilter(BaseFilterOrderBy):
     name = filters.CharFilter(lookup_expr="icontains", field_name="name")
     class Meta:
         model = Outlet
-        fields = ["id"]
+        fields = '__all__'

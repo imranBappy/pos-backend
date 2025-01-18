@@ -1,0 +1,8 @@
+celery -A backend worker --loglevel=info --pool=threads
+celery -A backend flower
+
+Ctrl + Alt + I
+
+{
+  "authorization" :"bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzM5MTk5NzIxLCJvcmlnSWF0IjoxNzM2NjA3NzIxLjkwODg3OCwibmFtZSI6InVzZXIgbmFtZSIsImVtYWlsIjoiYWRtaW4uaW1yYW5AZ21haWwuY29tIiwicm9sZSI6IkFETUlOIiwicGhvdG8iOm51bGx9.pxefVmVEOdN8ndiGHMIe4JkpWwHL-u_1oF8KseZBzNQ"
+}

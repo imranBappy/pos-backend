@@ -4,7 +4,6 @@ from graphene import Connection
 
 class CountConnection(Connection):
     total_count = graphene.Int()
-
     class Meta:
         abstract = True
 

@@ -5,42 +5,27 @@ from apps.base.utils import get_object_or_none, generate_message, create_graphql
 from .models import Outlet
 from .objectType import OutletType
 from apps.base.utils import get_object_by_kwargs
-
-class CreateOutlet(graphene.Mutation):
-    message = graphene.String()
-
-    class Arguments:
-        name = graphene.String(required=True)
-        phone = graphene.String(required=True)
-        email = graphene.String(required=True)
-        address = graphene.String(required=True)
-
-    def mutate(self, info, name, phone, email, address):
-
-        new_outlet = Outlet(name=name, phone=phone, email=email, address=address)
-        new_outlet.save()
-        return {"message": "Success"}
-
+from backend.authentication import isAuthenticated
 
 class CreateOutlet(graphene.Mutation):
     message = graphene.String()
     success = graphene.Boolean()
-
+    outlet = graphene.Field(OutletType)
     class Arguments:
         name = graphene.String(required=True)
         phone = graphene.String(required=True)
         email = graphene.String(required=True)
         address = graphene.String(required=True)
 
+    
+    @isAuthenticated(['ADMIN'])
     def mutate(self, info, name, phone, email, address):
         new_outlet = Outlet(name=name, phone=phone, email=email, address=address)
         new_outlet.save()
-        return {"message": "Success", 'success':True}
-
+        return CreateOutlet(outlet=new_outlet,success=True, message="Outlet successfully created!")
 
 class UpdateOutlet(graphene.Mutation):
-    
-
+    outlet = graphene.Field(OutletType)
     class Arguments:
         id = graphene.ID(required=True)
         name = graphene.String()
@@ -48,8 +33,6 @@ class UpdateOutlet(graphene.Mutation):
         email = graphene.String()
         address = graphene.String()
     
-    outlet = graphene.Field(OutletType)
-
     def mutate(self, info,id, name=None, phone=None, email=None, address=None):
         outlet = get_object_by_kwargs(Outlet, {"id": id})
         if name is not None:

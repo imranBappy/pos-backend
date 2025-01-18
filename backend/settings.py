@@ -12,6 +12,10 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 from decouple import config
+from celery.schedules import crontab
+import datetime
+
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,38 +25,115 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-pxxq#m5a#f17646-@7e7uwp2%k-v9c^uz50)8vp45%xwqlh$@#"
+SECRET_KEY = config("SECRET_KEY", None)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
+DEBUG = config('DEBUG', default=False, cast=bool)
 ALLOWED_HOSTS = ["*"]
+CORS_ALLOW_ALL_ORIGINS = True
+
+
+WEBSITE_URL = config('WEBSITE_URL', 'http://localhost:3000')
+
+# OTP life time
+OTP_TIMESTAMP = config('OTP_TIMESTAMP', default=5, cast=int)
+
+
+# templates
+APPEND_SLASH = False
 
 
 # Application definition
 
-INSTALLED_APPS = [
-    "django.contrib.admin",
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
-    "django.contrib.sessions",
-    "django.contrib.messages",
-    "django.contrib.staticfiles",
-    "apps.outlet",
-    "apps.kitchen",
-    "apps.product",
-    "apps.accounts"
+TENANT_APPS=[
+      # The following Django contrib apps must be in TENANT_APPS
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.messages',
+    'django.contrib.sessions',
+    'django.contrib.staticfiles',
+    'graphene_django',
+    'easy_thumbnails',
+    'corsheaders',
+    'django_filters',
+    # tenant-specific apps
+    'apps.product', 
+    'apps.outlet',
+    'apps.kitchen',
+    'apps.accounts',
+]
+
+SHARED_APPS = [
+    'django_tenants',
+    'apps.clients',
+    
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.messages',
+    'django.contrib.sessions',
+    'django.contrib.staticfiles',
+    'graphene_django',
+    'easy_thumbnails',
+    'corsheaders',
+    'django_filters',
+
+    # public apps
+    'apps.accounts',
+   
 ]
 
 
-THIRD_PARTY_APPS = [
-    "graphene_django",
-    "django_filters",
-]
 
-INSTALLED_APPS = INSTALLED_APPS + THIRD_PARTY_APPS
+
+INSTALLED_APPS = list(SHARED_APPS) + [app for app in TENANT_APPS if app not in SHARED_APPS]
+
+# Email setup
+EMAIL_BACKEND = config('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')  # change to 'django.core.mail.backends.smtp.EmailBackend' for production
+EMAIL_HOST = config('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = config('EMAIL_PORT', 587)
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', True)
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', 'imranbappy.official@gmail.com')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', 'iuxnjtepegzbsrvs')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', 'imranbappy.official@gmail.com')
+
+#celery stuff
+CELERY_BROKER_URL = config('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
+
+CELERY_BEAT_SCHEDULE = {
+    'release-expired-bookings': {
+        'task': 'apps.product.tasks.release_expired_bookings',
+        'schedule': crontab(minute='*/1'),  # Run every minute
+    },
+}
+
+GRAPHENE = {
+    "SCHEMA": "backend.schema.schema",
+    'MIDDLEWARE': [
+        'graphql_jwt.middleware.JSONWebTokenMiddleware',
+    ],
+}
+
+#token lifetime
+JWT_EXPIRATION_DELTA = datetime.timedelta(days=config('JWT_EXPIRATION_DELTA', default=15,cast=int))
+JWT_REFRESH_EXPIRATION_DELTA = datetime.timedelta(days=config('JWT_REFRESH_EXPIRATION_DELTA', default=7,cast=int))
+
+AUTHENTICATION_BACKENDS = [
+    'graphql_jwt.backends.JSONWebTokenBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+AUTH_USER_MODEL = 'accounts.User'
+DB_PREFIX = "w3_pos_"
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    'django_tenants.middleware.main.TenantMainMiddleware',
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -60,9 +141,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    
-    # Add your custom middleware
-    # "apps.base.middleware.TokenAuthenticationMiddleware"
+    # 'apps.clients.middleware.TenantMiddleware',
 ]
 
 ROOT_URLCONF = "backend.urls"
@@ -70,11 +149,12 @@ ROOT_URLCONF = "backend.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        'DIRS': [BASE_DIR / 'templates'],  # Add the root templates directory
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
                 "django.template.context_processors.debug",
+                'django.template.context_processors.request',
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
@@ -91,15 +171,25 @@ WSGI_APPLICATION = "backend.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": config("ENGINE", "django.db.backends.postgresql_psycopg2"),
+        "ENGINE":  "django_tenants.postgresql_backend",
         "NAME": config("DB_NAME", ""),
         "USER": config("DB_USER", ""),
         "PASSWORD": config("DB_PASS", ""),
         "HOST": config("DB_HOST", "localhost"),
-        "PORT": config("DB_PORT", "5432"),
+        "PORT": config("DB_PORT", "5435"),
     }
 }
 
+DATABASE_ROUTERS = (
+    'django_tenants.routers.TenantSyncRouter',
+)
+
+TENANT_MODEL = "clients.Client"  # app.Model
+TENANT_DOMAIN_MODEL = "clients.Domain"  # app.Model
+
+SHOW_PUBLIC_IF_NO_TENANT_FOUND = True
+
+DJANGO_ALLOW_ASYNC_UNSAFE = True
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -141,15 +231,3 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
-
-GRAPHENE = {
-    "SCHEMA": "backend.schema.schema",
-    'MIDDLEWARE': [
-        'graphql_jwt.middleware.JSONWebTokenMiddleware',
-    ],
-}
-AUTHENTICATION_BACKENDS = [
-    'graphql_jwt.backends.JSONWebTokenBackend',
-    'django.contrib.auth.backends.ModelBackend',
-]

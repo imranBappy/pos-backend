@@ -7,6 +7,7 @@ import requests
 import base64
 import random
 import string
+import uuid
 
 from django.contrib.auth import get_user_model
 
@@ -293,3 +294,11 @@ def get_absolute_path(info, file):
 
 
 
+def create_token():
+    return uuid.uuid4()
+
+def generate_otp():
+    otp = ''
+    for x in range(4):
+        otp += str(random.randint(1, 9))
+    return otp

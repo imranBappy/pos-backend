@@ -3,8 +3,7 @@ from django.db.models import SET_NULL
 
 
 # imported models
-# from apps.item.models import Item
-# from outlet.models import Outlet
+from apps.outlet.models import Outlet
 
 
 class Kitchen(models.Model):
@@ -12,9 +11,12 @@ class Kitchen(models.Model):
     photo = models.URLField()
     description = models.TextField()
     outlet = models.ForeignKey(
-        "outlet.Outlet", on_delete=models.CASCADE, related_name="kitchens"
+        Outlet,on_delete=SET_NULL, null=True, blank=True, related_name="kitchens"
     )
+    
     is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.id} - {self.name}"
@@ -30,18 +32,16 @@ class KitchenOrder(models.Model):
         ("SERVED", "Served/Delivered"),
         ("CANCELLED", "Cancelled"),
     ]
-    # order = models.ForeignKey('Order', on_delete=models.CASCADE, related_name='kitchen_orders')
-    item = models.ForeignKey(
-        "product.Product",
-        on_delete=SET_NULL,
-        null=True,
-        blank=True,
-        related_name="kitchen_orders",
-    )
+    # products = models.ForeignKey(
+    #     "product.Product",
+    #     on_delete=SET_NULL,
+    #     null=True,
+    #     blank=True,
+    #     related_name="kitchen_orders",
+    # )
     status = models.CharField(
         max_length=20, choices=KITCHEN_ORDER_STATUS, default="PENDING"
     )
-    # assigned_to = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True)
     kitchen = models.ForeignKey(
         Kitchen,
         on_delete=SET_NULL,
@@ -49,6 +49,9 @@ class KitchenOrder(models.Model):
         blank=True,
         related_name="kitchen_orders",
     )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.id} - {self.status}"
@@ -60,6 +63,9 @@ class Printer(models.Model):
         Kitchen, on_delete=SET_NULL, null=True, blank=True, related_name="printers"
     )
     is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.id} - {self.name}"
+

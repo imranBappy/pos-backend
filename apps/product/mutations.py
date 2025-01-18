@@ -1,130 +1,206 @@
 import graphene
 from apps.base.utils import get_object_or_none, generate_message, create_graphql_error
-from .models import Category, Product
 from apps.outlet.models import Outlet
-from .objectType import CategoryType, ProductType
+from .objectType import CategoryType, ProductType, OrderProductType, OrderType
 from apps.base.utils import get_object_by_kwargs
+from backend.authentication import isAuthenticated
 
-class CreateCategory(graphene.Mutation):
+from apps.kitchen.models import Kitchen
+from datetime import datetime
+from graphene_django.forms.mutation import DjangoFormMutation
+from .forms import ProductForm, CategoryForm, OrderForm, OrderProductForm, FloorForm, FloorTableForm, PaymentForm
+from apps.product.models import Category,TableBooking, Product, Order, OrderProduct, Floor, FloorTable, Payment
+from apps.accounts.models import Address, UserRole
+import json 
+from django.utils.timezone import now
+from datetime import timedelta
+from .tasks import release_expired_bookings, booking_expired
+from graphql import GraphQLError
+import random
+import string
+import uuid
+
+class CategoryCUD(DjangoFormMutation):
     message = graphene.String()
-
-    class Arguments:
-        name = graphene.String(required=True)
-        photo = graphene.String(required=True)
-        description = graphene.String(required=True)
-
-    def mutate(self, info, name, photo, description):
-        new_category = Category(name=name, photo=photo, description=description)
-        new_category.save()
-        return CreateCategory(message="Success")
-
-
-class UpdateCategory(graphene.Mutation):
-
-    class Arguments:
-        id = graphene.ID(required=True)
-        name = graphene.String()
-        photo = graphene.String()
-        description = graphene.String()
-    
+    success = graphene.Boolean()
     category = graphene.Field(CategoryType)
-
-    def mutate(self, info,id, name=None, photo=None, description=None):
-        category = get_object_by_kwargs(Category, {"id": id})
-        if name is not None:
-            category.name = name
-        if photo is not None:
-            category.photo = photo
-        if description is not None:
-            category.description = description
-        category.save()
-        return UpdateCategory(category=category)
-
-
-class CreateProduct(graphene.Mutation):
-    message = graphene.String()
-
-    class Arguments:
-        name = graphene.String(required=True)
-        price = graphene.Int(required=True)
-        description = graphene.String(required=True)
-        photo = graphene.String(required=True)
-        tax = graphene.Float(required=True)
-        sku = graphene.String(required=True)
-        cooking_time = graphene.Int(required=True)
-        tag = graphene.String()
-
-        category = graphene.ID()
-        subcategory = graphene.ID(required=True)
-        kitchen = graphene.ID(required=True)
-
-    def mutate(self, info, name, price, description,
-            photo,
-            tax,
-            sku,
-            cooking_time,
-            tag, 
-            category, 
-            subcategory, 
-            kitchen
-        ):
-        find_category = get_object_by_kwargs(Category, {"id": category})
-        find_subcategory = get_object_by_kwargs(Category, {"id": subcategory})
-        find_kitchen = get_object_by_kwargs(Kitchen, {"id": kitchen})
-
-        new_Product = Product(name=name, 
-            price=price, 
-            description=description, 
-            photo=photo,
-            tax=tax,
-            sku=sku,
-            cooking_time=cooking_time, 
-            tag=tag, 
-            category=find_category,
-            subcategory=find_subcategory,
-            kitchen=find_kitchen,
-        )
-        new_Product.save()
-        return CreateProduct(message="Success")
-
-
-class UpdateProduct(graphene.Mutation):
-    class Arguments:
-        id = graphene.ID(required=True)
-        name = graphene.String()
-        photo = graphene.String()
-        description = graphene.String()
-        outlet = graphene.ID()
     
+    class Meta:
+        form_class = CategoryForm
+    
+    @isAuthenticated([UserRole.MANAGER, UserRole.ADMIN])
+    def mutate_and_get_payload(self, info, **input):
+            
+        instance = get_object_or_none(Category, id=input.get('id'))
+        form = CategoryForm(input, instance=instance)
+        if form.is_valid():
+            category = form.save()
+            return CategoryCUD(
+                message="Created successfully",
+                success=True,
+                category=category
+            )
+        
+class ProductCUD(DjangoFormMutation):
+    message = graphene.String()
+    success = graphene.Boolean()
     product = graphene.Field(ProductType)
 
-    def mutate(self, info,id, name=None, photo=None, description=None, outlet=None):
-        product = get_object_by_kwargs(product, {"id": id})
-        if name is not None:
-            product.name = name
-        if photo is not None:
-            product.photo = photo
-        if description is not None:
-            product.description = description
-        if outlet is not None:  
-            find_outlet = get_object_by_kwargs(Outlet, {"id": outlet})
-            product.outlet = find_outlet
-        product.save()
+    class Meta:
+        form_class = ProductForm
 
-        return UpdateProduct(Product=Product)
+    @isAuthenticated([UserRole.MANAGER, UserRole.ADMIN])
+    def mutate_and_get_payload(self, info, **input):
+        
+        instance = get_object_or_none(Product, id=input.get("id"))
+        form = ProductForm(input, instance=instance)
+        
+        
+        if form.is_valid():
+            product = form.save()
+            return ProductCUD(
+                message="Created successfully!", 
+                success=True,
+                product=product
+            )
+        
+        # response proper error message
+        create_graphql_error(form.errors) 
+        
 
-# class DeleteProduct(graphene.Mutation):
-#     class Arguments:
-#         id = graphene.ID(required=True)
-#     success = graphene.Boolean()
-#     def mutate(self, info, id):
-#         Product = get_object_by_kwargs(Product, {"id": id})
-#         Product.delete()
-#         return DeleteProduct(success=True)
+class DeleteProduct(graphene.Mutation):
+    message = graphene.String()
+    success = graphene.Boolean()    
+    class Arguments:
+        id = graphene.ID(required=True)
+    
+    @isAuthenticated([UserRole.ADMIN, UserRole.MANAGER])
+    def mutate(self, info, id):
+        product = get_object_by_kwargs(Product, {"id": id})
+        product.delete()
+        return DeleteProduct(success=True, message="Deleted!")
+
+class OrderCUD(DjangoFormMutation):
+    message = graphene.String()
+    success = graphene.Boolean()
+    order = graphene.Field(OrderType)
+    
+    class Meta:
+        form_class = OrderForm
+
+    def mutate_and_get_payload(self, info, **input):
+        instance = get_object_or_none(Order, id=input.get('id'))
+        print("final_amount : ", input.get('final_amount'))
+        form = OrderForm(input, instance=instance)
+        if not input.get('order_id'):
+            random_string = ''.join(random.choices(string.ascii_uppercase + string.digits, k=9))
+            order_id = f"#{random_string}"
+            input['order_id'] = order_id
+            
+        
+        if form.is_valid()  == False:
+            print(form.errors)
+            return create_graphql_error(form) 
+        
+        booking_expired()
+
+        # if table is not available, then return error
+        if input.get('table_bookings'):
+            table_bookings = json.loads(input.get('table_bookings'))
+            for table_id, duration_minutes in table_bookings:
+                table = FloorTable.objects.get(id=table_id, is_booked=False, is_active=True)
+                if table == None:
+                    raise GraphQLError(message="Table is already booked!")
+                
+        order = form.save()
+        print(order)
+        
+        if input.get('table_bookings'):
+            table_bookings = json.loads(input.get('table_bookings'))     # [('table_id', 'duration_minutes')]
+            for table_id, duration_minutes in table_bookings:
+                table = FloorTable.objects.get(id=table_id)
+                TableBooking.objects.create(
+                    floor_table=table,
+                    order=order,
+                    start_time=now(),
+                    duration=timedelta(minutes=duration_minutes),
+                    is_active=True
+                )
+                table.is_booked = True  # Mark table as booked
+                table.save()
+                task_result = release_expired_bookings.apply_async(
+                    countdown=duration_minutes * 60          
+                ) # countdown in seconds
+        
+        return OrderCUD(message="Created successfully!", success=True, order=order)
+    
+class OrderProductCUD(DjangoFormMutation):
+    success = graphene.Boolean()
+    id = graphene.ID()
+    class Meta:
+        form_class = OrderProductForm
+
+    def mutate_and_get_payload(self, info, **input):
+        instance = get_object_or_none(OrderProduct, id=input.get('id'))
+        form = OrderProductForm(input, instance=instance)
+        if form.is_valid():
+            order = form.save()
+            return OrderProductCUD( success=True, id=order.id)
+
+class FloorCUD(DjangoFormMutation):
+    success = graphene.Boolean()
+    class Meta:
+        form_class = FloorForm
+
+    def mutate_and_get_payload(self, info, **input):
+        instance = get_object_or_none(Floor, id=input.get('id'))
+        form = FloorForm(input, instance=instance)
+        if form.is_valid():
+            order = form.save()
+            return FloorCUD(success=True)
+        
+
+class FloorTableCUD(DjangoFormMutation):
+    success = graphene.Boolean()
+    class Meta:
+        form_class = FloorTableForm
+
+    def mutate_and_get_payload(self, info, **input):
+        instance = get_object_or_none(FloorTable, id=input.get('id'))
+        form = FloorTableForm(input, instance=instance)
+        if form.is_valid():
+            order = form.save()
+            return FloorTableCUD( success=True)
+
+class PaymentCUD(DjangoFormMutation):
+    success = graphene.Boolean()
+    class Meta:
+        form_class = PaymentForm
+
+    def mutate_and_get_payload(self, info, **input):
+        instance = get_object_or_none(Payment, id=input.get('id'))
+        form = PaymentForm(input, instance=instance)
+        # if not input.get('trx_id'):
+        #     trx_id = ''.join(random.choices(string.ascii_uppercase + string.digits , k=15))
+        #     input['trx_id'] =trx_id
+            
+        if form.is_valid():
+            order = form.save()
+            return PaymentCUD( success=True)
+        create_graphql_error(form)
 
 
 class Mutation(graphene.ObjectType):
-    create_category = CreateCategory.Field()
-    update_category = UpdateCategory.Field()
-    create_product = CreateProduct.Field()
-    update_product = UpdateProduct.Field()
+    product_cud = ProductCUD.Field()
+    delete_product = DeleteProduct.Field()
+    category_cud = CategoryCUD.Field()
+    order_cud = OrderCUD.Field()
+    order_product_cud = OrderProductCUD.Field()
+    floor_cud = FloorCUD.Field()
+    floor_table_cud = FloorTableCUD.Field()
+    payment_cud = PaymentCUD.Field()
+    
+    
+    
+    
+    

@@ -1,5 +1,5 @@
-from graphene_django.types import DjangoObjectType
 import graphene
+from graphene_django.types import DjangoObjectType
 from .models import Outlet
 from backend.count_connection import CountConnection
 from .filters import OutletFilter
@@ -10,5 +10,6 @@ class OutletType(DjangoObjectType):
     class Meta:
         model = Outlet
         fields = "__all__"
-    def resolve_id(self, info):
-        return self.id
+        filterset_class = OutletFilter
+        interfaces = (graphene.relay.Node,)
+        connection_class = CountConnection

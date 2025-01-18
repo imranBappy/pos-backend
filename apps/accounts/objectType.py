@@ -1,20 +1,46 @@
-from graphene_django.types import DjangoObjectType
 import graphene
-from apps.product.models import Product, Category
+from graphene_django import DjangoObjectType
+from .models import User, Address, Building
+from .filters import UserFilter, AddressFilter, BuildingFilter
+from backend.count_connection import CountConnection
+from django.contrib.auth.models import Group
+ 
 
-
-class ProductType(DjangoObjectType):
+class UserType(DjangoObjectType):
+    is_active = graphene.Boolean()   
     id = graphene.ID(required=True)
     class Meta:
-        model = Product
-        fields = "__all__"
-    def resolve_id(self, info):
-        return self.id
+        model = User
+        fields = [
+            'name', 'email', 'gender', 'date_of_birth', 'created_at','updated_at',
+            'photo', 'role', 'phone', 'is_verified', 'term_and_condition_accepted',
+            'privacy_policy_accepted', 'privacy_policy_accepted', 'is_active', 'address'
+        ]
+        filterset_class = UserFilter
+        interfaces = (graphene.relay.Node,)
+        connection_class = CountConnection
+    
+    
 
-class CategoryType(DjangoObjectType):
+
+class AddressType(DjangoObjectType):
     id = graphene.ID(required=True)
     class Meta:
-        model = Category
-        fields = "__all__"
-    def resolve_id(self, info):
-        return self.id
+        model = Address
+        filterset_class = AddressFilter
+        interfaces = (graphene.relay.Node,)
+        connection_class = CountConnection
+
+class BuildingType(DjangoObjectType):
+    id = graphene.ID(required=True)
+    class Meta:
+        model = Building
+        filterset_class = BuildingFilter
+        interfaces = (graphene.relay.Node,)
+        connection_class = CountConnection
+ 
+
+class RoleType(DjangoObjectType):
+    class Meta:
+        model = Group
+        
