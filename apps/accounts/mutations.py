@@ -34,6 +34,11 @@ class RegisterUser(graphene.Mutation):
         if find_user is not None:
             raise GraphQLError(message="Email is already registered.")
         
+        if phone:
+            find_by_phone_user = get_object_or_none(CustomUser, phone=phone)
+            if find_by_phone_user is not None:
+                raise GraphQLError(message="Phone is already registered.")
+        
         user = CustomUser.objects.create_user(
             name=name, email=email, password=password, phone=phone
         )

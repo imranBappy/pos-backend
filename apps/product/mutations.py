@@ -147,6 +147,17 @@ class OrderProductCUD(DjangoFormMutation):
             order = form.save()
             return OrderProductCUD( success=True, id=order.id)
 
+class DeleteOrderProduct(graphene.Mutation):
+    message = graphene.String()
+    success = graphene.Boolean()    
+    class Arguments:
+        id = graphene.ID(required=True)
+    
+    @isAuthenticated([UserRole.ADMIN, UserRole.MANAGER])
+    def mutate(self, info, id):
+        order_product = get_object_by_kwargs(OrderProduct, {"id": id})
+        order_product.delete()
+        return DeleteOrderProduct(success=True, message="Deleted!")
 class FloorCUD(DjangoFormMutation):
     success = graphene.Boolean()
     class Meta:
@@ -199,7 +210,7 @@ class Mutation(graphene.ObjectType):
     floor_cud = FloorCUD.Field()
     floor_table_cud = FloorTableCUD.Field()
     payment_cud = PaymentCUD.Field()
-    
+    delete_order_product = DeleteOrderProduct.Field()
     
     
     

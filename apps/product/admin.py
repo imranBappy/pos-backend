@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 # Register your models here.
-from .models import Category,TableBooking, Product, Order, OrderProduct, ExtraFood, Floor, FloorTable
+from .models import Category,Payment, TableBooking, Product, Order, OrderProduct, ExtraFood, Floor, FloorTable
 
 
 @admin.register(Category)
@@ -22,7 +22,10 @@ class OrderAdmin(admin.ModelAdmin):
 @admin.register(OrderProduct)
 class OrderProductAdmin(admin.ModelAdmin):
     list_display = ('id','quantity','price')
-
+    
+@admin.register(Payment)
+class PaymentAdmin(admin.ModelAdmin):
+    list_display = ('id','amount','trx_id')
 
 
 @admin.register(ExtraFood)
