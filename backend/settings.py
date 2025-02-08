@@ -62,6 +62,7 @@ TENANT_APPS=[
     'apps.outlet',
     'apps.kitchen',
     'apps.accounts',
+    'apps.inventory'
 ]
 
 SHARED_APPS = [
@@ -80,8 +81,8 @@ SHARED_APPS = [
     'django_filters',
 
     # public apps
-    'apps.accounts',
-   
+    'apps.outlet', # it not use
+    'apps.accounts',   
 ]
 
 

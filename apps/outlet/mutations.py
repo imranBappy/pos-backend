@@ -6,23 +6,28 @@ from .models import Outlet
 from .objectType import OutletType
 from apps.base.utils import get_object_by_kwargs
 from backend.authentication import isAuthenticated
+from graphene_django.forms.mutation import DjangoFormMutation
 
-class CreateOutlet(graphene.Mutation):
+class CreateCUD(DjangoFormMutation):
     message = graphene.String()
     success = graphene.Boolean()
     outlet = graphene.Field(OutletType)
-    class Arguments:
-        name = graphene.String(required=True)
-        phone = graphene.String(required=True)
-        email = graphene.String(required=True)
-        address = graphene.String(required=True)
+    class Meta:
+        form_class = OutletForm
+        
+        
 
     
-    @isAuthenticated(['ADMIN'])
-    def mutate(self, info, name, phone, email, address):
-        new_outlet = Outlet(name=name, phone=phone, email=email, address=address)
-        new_outlet.save()
-        return CreateOutlet(outlet=new_outlet,success=True, message="Outlet successfully created!")
+    @isAuthenticated()
+    def mutate_and_get_payload(self, info, **input):
+        instance = get_object_or_none(Outlet, id=input.get('id'))
+        form = OutletForm(input, instance=instance)
+        if not form.is_valid():
+            create_graphql_error(form)
+            return
+        
+        new_outlet = form.save()
+        return CreateCUD(outlet=new_outlet,success=True, message="Outlet successfully created!")
 
 class UpdateOutlet(graphene.Mutation):
     outlet = graphene.Field(OutletType)
@@ -58,5 +63,4 @@ class DeleteOutlet(graphene.Mutation):
 
 
 class Mutation(graphene.ObjectType):
-    create_outlet = CreateOutlet.Field()
-    update_outlet = UpdateOutlet.Field()
+    outlet_cud = CreateCUD.Field()

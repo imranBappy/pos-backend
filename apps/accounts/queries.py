@@ -7,6 +7,12 @@ from apps.base.utils import get_object_by_id, get_object_by_kwargs
 from backend.authentication import isAuthenticated
 from django.db.models import Q
 from django.contrib.auth.models import Group
+from graphene import Enum
+
+
+class AddressTypeEnum(Enum):
+    HOME = 'HOME'
+    OFFICE = 'OFFICE'
 
 class Query(graphene.ObjectType):
     users = DjangoFilterConnectionField(UserType)
@@ -31,12 +37,9 @@ class Query(graphene.ObjectType):
     
     def resolve_user(self, info, id=None, email=None, phone=None):
         try:
-            print(id, email, phone)
             if id:
-                print('id')
                 return User.objects.get(id=id)
             elif email:
-                print('email')
                 return User.objects.get(email=email)
             elif phone:
                 return User.objects.get(phone=phone)
@@ -46,11 +49,12 @@ class Query(graphene.ObjectType):
     
        
     def resolve_address(self, info, id=None, user=None, address_type=None):
+        
         if id:
-            return get_object_by_kwargs(Address, {'id': id, 'address_type':address_type})
-        elif user:
-            return get_object_by_kwargs(Address, {'user': user, 'address_type':address_type})
-        return get_object_by_kwargs(Address, { 'user':user, 'id':id, 'address_type':address_type })
+            return Address.objects.get(id=id)
+        elif user and address_type:
+            return Address.objects.get(user=user, address_type=address_type)
+        return gAddress.objects.get(user=user )
      
     def resolve_addresses(self, info, **kwargs):
         return Address.objects.all()

@@ -4,7 +4,7 @@ from .models import User, Address, Building
 from .filters import UserFilter, AddressFilter, BuildingFilter
 from backend.count_connection import CountConnection
 from django.contrib.auth.models import Group
- 
+   
 
 class UserType(DjangoObjectType):
     is_active = graphene.Boolean()   
@@ -14,7 +14,7 @@ class UserType(DjangoObjectType):
         fields = [
             'name', 'email', 'gender', 'date_of_birth', 'created_at','updated_at',
             'photo', 'role', 'phone', 'is_verified', 'term_and_condition_accepted',
-            'privacy_policy_accepted', 'privacy_policy_accepted', 'is_active', 'address'
+            'privacy_policy_accepted', 'privacy_policy_accepted', 'is_active', 'address', 'outlet'
         ]
         filterset_class = UserFilter
         interfaces = (graphene.relay.Node,)
@@ -25,6 +25,7 @@ class UserType(DjangoObjectType):
 
 class AddressType(DjangoObjectType):
     id = graphene.ID(required=True)
+
     class Meta:
         model = Address
         filterset_class = AddressFilter

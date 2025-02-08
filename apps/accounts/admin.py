@@ -13,7 +13,7 @@ class UserOTPAdmin(admin.ModelAdmin):
 
 @admin.register(Address)
 class AddressAdmin(admin.ModelAdmin):
-    list_display = ('id','user','country','state','city','street','address_type')
+    list_display = ('id','user','address_type', 'default','country','state','city','street',)
     
 @admin.register(Building)
 class BuildingAdmin(admin.ModelAdmin):

@@ -67,7 +67,7 @@ def create_fake_data():
             price=round(random.uniform(5.0, 500.0), 2),
             description=fake.text(max_nb_chars=300),
             images=json.dumps([fake.image_url() for _ in range(random.randint(1, 5))]),
-            tax=round(random.uniform(0, 18), 2),
+            vat=round(random.uniform(0, 18), 2),
             sku=fake.unique.ean13(),
             cooking_time=f"{random.randint(5, 60)} minutes",
             video=fake.url() if random.random() > 0.7 else None,

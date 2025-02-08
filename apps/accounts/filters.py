@@ -38,6 +38,10 @@ class UserFilter(BaseFilterOrderBy):
 
 
 class AddressFilter(BaseFilterOrderBy):
+    user = filters.NumberFilter(lookup_expr="exact")
+    addressType = filters.NumberFilter(lookup_expr="exact")
+    
+    
     class Meta:
         model = Address
         fields = '__all__'

@@ -5,6 +5,7 @@ from apps.accounts.models import Address
 from apps.base.utils import get_object_by_kwargs
 from .objectType import CategoryType, ProductType, SubCategoryType, PaymentType, OrderType, OrderProductType, FloorType, FloorTableType
 from graphene_django.filter import DjangoFilterConnectionField
+from apps.product.tasks import release_expired_bookings, booking_expired
 
 
 class Query(graphene.ObjectType):
@@ -76,6 +77,7 @@ class Query(graphene.ObjectType):
         return get_object_by_kwargs(FloorTable, {"id": id})
      
     def resolve_floor_tables(self, info, **kwargs):
+        booking_expired()
         return FloorTable.objects.all()
  
         

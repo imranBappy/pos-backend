@@ -1,7 +1,6 @@
 from django.db import models
 from django.db.models import SET_NULL
 
-
 # imported models
 from apps.outlet.models import Outlet
 

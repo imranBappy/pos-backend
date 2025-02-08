@@ -1,0 +1,17 @@
+
+Note:
+accounts and outlet app has shared. Because, We need to create super user in public schema and tenant schema. user has Foreing Key with outlet
+That's why i have share outlet also.
+
+Project Run for windows
+project_run.bat
+
+
+Project Run for Linux 
+project_run.sh
+
+Tenant Create Command 
+py manage.py createtenant --schema_name demo --email admin@gmail.com --password pass123
+
+py manage.py createtenant --schema_name demo3 --email admin@gmail.com --password pass123
+

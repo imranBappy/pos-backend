@@ -1,6 +1,6 @@
 from django import forms
-from  apps.product.models import ORDER_TYPE_CHOICES, PAYMENT_METHOD_CHOICES, ORDER_STATUS_CHOICES,Coupon, Product, Category, Order, OrderProduct, User, Outlet,  FloorTable,Floor, ExtraFood, Payment
- 
+from  apps.product.models import ORDER_TYPE_CHOICES, PAYMENT_METHOD_CHOICES, ORDER_STATUS_CHOICES,Coupon, Product, Category, Order, OrderProduct, User,  FloorTable,Floor, ExtraFood, Payment
+from apps.outlet.models import Outlet
 from apps.accounts.models import Address
 
 class ProductForm(forms.ModelForm):

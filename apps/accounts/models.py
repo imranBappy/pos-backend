@@ -5,6 +5,7 @@ from apps.base.models import BaseModelWithoutID
 from django.conf import settings
 from django.utils import timezone
 from apps.accounts.tasks import send_email_on_delay
+from apps.outlet.models import Outlet
 
 class GenderChoices(models.TextChoices):
     MALE = 'MALE', 'Male'
@@ -17,6 +18,7 @@ class UserRole(models.TextChoices):
     CHEF = 'CHEF', 'Chef'
     WAITER = 'WAITER', 'Waiter'
     CUSTOMER = 'CUSTOMER', 'Customer'
+
 
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -68,7 +70,9 @@ class User(
     photo = models.URLField(max_length=1000, blank=True, null=True)
     role = models.ForeignKey(Group, related_name='users', on_delete=models.SET_NULL, blank=True, null=True)
     phone = models.CharField(max_length=15, blank=True, null=True, unique=True)
-        
+    
+    outlet = models.ForeignKey(Outlet, blank=True, null=True, related_name='users' , on_delete=models.SET_NULL)
+            
     is_verified = models.BooleanField(default=False)
     term_and_condition_accepted = models.BooleanField(default=False)
     privacy_policy_accepted = models.BooleanField(default=False)
@@ -111,8 +115,10 @@ class UserOTP(models.Model):
 class AddressTypeChoices(models.TextChoices):
     HOME = 'HOME', 'Home'
     OFFICE = 'OFFICE', 'Office'
+from django.core.exceptions import ValidationError
+
 class Address(models.Model):
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='address')
+    user = models.ForeignKey(User, on_delete=models.CASCADE,  related_name='address')
     address_type = models.CharField(
         max_length=10, 
         choices=AddressTypeChoices.choices, 
@@ -125,24 +131,28 @@ class Address(models.Model):
     area = models.CharField(max_length=100, null=True, blank=True)
     street = models.CharField(max_length=100, null=True, blank=True)
     house = models.CharField(max_length=100, null=True, blank=True)
-        
-    address = models.TextField( null=True, blank=True)
+    address = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
-
     
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=['user','address_type', 'default'],
+                fields=['user', 'address_type'],
+                name='unique_user_address_type'
+            ),
+            models.UniqueConstraint(
+                fields=['user', 'address_type', 'default'],
                 name='unique_user_address_type_default'
             )
         ]
         ordering = ['-created_at']
     
+    
+    
     def __str__(self):
         return f"{self.id} - {self.user.email if self.user else 'No User'} - {self.address_type}"
+
 
 
 class Building(models.Model):

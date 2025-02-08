@@ -1,4 +1,4 @@
-from .models import Product, Category, Order, OrderProduct, Address, ExtraFood, Floor, FloorTable, Payment
+from .models import Product, Category, Order, OrderProduct,  ExtraFood, Floor, FloorTable, Payment
 import django_filters as filters
 from apps.base.filters import BaseFilterOrderBy
 from django.db.models import Q
@@ -83,10 +83,6 @@ class OrderProductFilter(BaseFilterOrderBy):
         model = OrderProduct
         fields = '__all__'
 
-class AddressFilter(BaseFilterOrderBy):
-    class Meta:
-        model = Address
-        fields = '__all__'
 
 class ExtraFoodFilter(BaseFilterOrderBy):
     class Meta:

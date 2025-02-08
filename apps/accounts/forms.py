@@ -18,6 +18,8 @@ class UserForm(forms.ModelForm):
         ]
 class AddressForm(forms.ModelForm):
     id = forms.CharField(required=False)
+    address_type = forms.CharField(required=False)
+    
     class Meta:
         model = Address
         fields = '__all__'       

@@ -101,13 +101,13 @@ class LoginUser(graphene.Mutation):
         try:
             
             if not email:
-                return LoginUser(token=None, success=False, message="Invalid email or password.",)
+                return GraphQLError("Invalid email or password.",)
             user = CustomUser.objects.get(email=email.lower()) 
 
             if not user.check_password(password):
-                return LoginUser(token=None, success=False, message="Invalid email or password.")
+                return  GraphQLError("Invalid email or password.")
             if not user.is_active:
-                return LoginUser(token=None, success=False, message="Account is inactive.")
+                return  GraphQLError("Account is inactive.")
             
             payload = {
                 'name' : user.name,
@@ -118,7 +118,8 @@ class LoginUser(graphene.Mutation):
             token = TokenManager.get_access(payload)
             return LoginUser(token=token,user=user, success=True, message="Login successful.")
         except CustomUser.DoesNotExist:
-            return LoginUser(token=None, success=False, message="Invalid email or password.",)
+            print("user dose not exit")
+            return  GraphQLError("Invalid email or password.",)
        
 class PasswordResetMail(graphene.Mutation):
     message = graphene.String()
@@ -222,17 +223,66 @@ class AddressCUD(DjangoFormMutation):
 
     @isAuthenticated()
     def mutate_and_get_payload(self, info, **input):
+         
         id=input.get('id')
         user = input.get('user')
+        
         address_type = input.get('address_type')
         instance = get_object_or_none(Address, id=id, address_type=address_type)
+         
         if not instance:
-           instance = get_object_or_none(Address, user=user, address_type=address_type) 
-           
+           instance = get_object_or_none(Address, user=user, address_type=address_type)
+        
+        # if is it First address then it will be default
+        if not id:
+            allAddress  = Address.objects.filter(user=user)
+            if not  allAddress:
+                input['default'] = True
+                
+        
         form = AddressForm(input, instance=instance)
         if form.is_valid():
             address = form.save()
             return AddressCUD( success=True, address=address)
+        
+        create_graphql_error(form)
+
+
+class AddressUpdate(graphene.Mutation):
+    success = graphene.Boolean()
+    # address = graphene.Field(AddressType)
+    
+    class Arguments:
+        user = graphene.ID(required=True)
+        address_type = graphene.String()
+        
+    def mutate(self,info, user, address_type):
+        address = Address.objects.get(user=user, address_type=address_type)
+        if(address.default):
+            return AddressUpdate(success=True)
+        
+        if address_type=='HOME':
+            address = Address.objects.get(user=user, address_type='OFFICE')
+            if(address):
+                if(address.default):
+                    address.default = False
+                    address.save()
+        
+        if address_type=='OFFICE':
+            address = Address.objects.get(user=user, address_type='HOME')
+            if(address):
+                if(address.default):
+                    address.default = False
+                    address.save()
+        
+        address = Address.objects.get(user=user, address_type=address_type)
+        address.default = True
+        address.save()
+        
+        return AddressUpdate(success=True)
+        
+        
+        
 
 class BuildingCUD(DjangoFormMutation):
     success = graphene.Boolean()
@@ -255,8 +305,8 @@ class BuildingCUD(DjangoFormMutation):
         if not addressInstance:
            raise GraphQLError("Address not found!")
             
-        address = form.save()
-        return AddressCUD( success=True, id=address.id)
+        building = form.save()
+        return BuildingCUD( success=True, id=building.id)
 
 
 class Mutation(graphene.ObjectType):
@@ -270,4 +320,5 @@ class Mutation(graphene.ObjectType):
     profile_update = ProfileUpdate.Field()
     address_cud = AddressCUD.Field()
     building_cud = BuildingCUD.Field()
+    address_update = AddressUpdate.Field() 
     
