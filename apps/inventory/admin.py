@@ -27,7 +27,7 @@ class ItemAdmin(admin.ModelAdmin):
 
 @admin.register(ParchageInvoiceItem)
 class ParchageInvoiceItemAdmin(admin.ModelAdmin):
-    list_display = ('id', 'item', 'quantity', 'supplier_order', 'price', 'created_at', 'updated_at')
+    list_display = ('id', 'item', 'quantity', 'price', 'created_at', 'updated_at')
 
 @admin.register(Waste)
 class WasteAdmin(admin.ModelAdmin):

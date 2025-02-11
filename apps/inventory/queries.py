@@ -78,7 +78,7 @@ class Query(graphene.ObjectType):
     def resolve_item(self, info, id):
         return get_object_by_kwargs(Item, {"id": id})
 
-    @isAuthenticated([UserRole.ADMIN])
+    # @isAuthenticated([UserRole.ADMIN])
     def resolve_items(self, info, **kwargs):
         return Item.objects.all()
 

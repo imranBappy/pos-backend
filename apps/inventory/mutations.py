@@ -130,6 +130,7 @@ class ItemCUD(DjangoFormMutation):
                 success=True,
                 item=item
             )
+        print(form.errors)
         create_graphql_error(form)
 
 class ParchageInvoiceItemCUD(DjangoFormMutation):

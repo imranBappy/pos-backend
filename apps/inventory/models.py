@@ -2,9 +2,12 @@ from django.db import models
 from django.utils import timezone
 from decimal import Decimal
 from datetime import timedelta
-
 from apps.accounts.models import Address, User  # Adjust the import path as needed.
-
+class PAYMENT_STATUS_CHOICES(models.TextChoices):
+    PENDING = 'PENDING', 'Pending'
+    COMPLETED = 'COMPLETED', 'Completed'
+    FAILED = 'FAILED', 'Failed'
+    REFUNDED = 'REFUNDED', 'REFUNDED'
 class PURCHASE_STATUS_CHOICES(models.TextChoices):
     PENDING = 'PENDING', 'Pending'
     COMPLETED = 'COMPLETED', 'Completed'
@@ -29,6 +32,11 @@ class Supplier(models.Model):
         return f"{self.id} - {self.name}"
 
 # # Need another model for saveing what will buy from this  supplier
+# class Save(models.Model):
+
+    
+#     pass
+
 
 class SupplierInvoice(models.Model):    
     due = models.DecimalField(max_digits=12, decimal_places=8 , null=True, blank=True, default=0)
@@ -37,13 +45,13 @@ class SupplierInvoice(models.Model):
     amount = models.DecimalField(max_digits=12, decimal_places=8, default=0)
     status = models.CharField(max_length=100, choices=PURCHASE_STATUS_CHOICES)
     supplier = models.ForeignKey(Supplier,on_delete=models.SET , null=True, blank=True, related_name='orders') # one to many
-
-    
+    invoice_image = models.CharField(max_length=255, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
         return f"{self.id} - {self.status} - {self.amount}"
+    # invoice_number, amount, images, items
 
 class SupplierPayment(models.Model):
     supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, related_name="supplier_payments")
@@ -55,7 +63,17 @@ class SupplierPayment(models.Model):
         ('Cheque', 'Cheque'),
     ])
     reference_number = models.CharField(max_length=100, blank=True, null=True)
-
+    trx_id = models.CharField(
+        max_length=100,
+        unique=True, 
+        null=True, 
+        blank=True
+    )
+    status = models.CharField(
+        max_length=100, 
+        choices=PAYMENT_STATUS_CHOICES, 
+        default="PENDING"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -76,11 +94,12 @@ class ItemCategory(models.Model):
 class Item(models.Model):
     name = models.CharField(max_length=100)    
     category = models.ForeignKey(ItemCategory, related_name='items', on_delete=models.SET_NULL, null=True, blank=True )
-    unit = models.OneToOneField(Unit, on_delete=models.SET_NULL,null=True, blank=True, related_name='ingredients' )
-    alert_stock = models.CharField(max_length=100)
+    unit = models.ForeignKey(Unit, on_delete=models.SET_NULL,null=True, blank=True, related_name='ingredients' )
+    alert_stock = models.IntegerField(default=0)
     sku = models.CharField(max_length=100)
     price = models.DecimalField(max_digits=12, decimal_places=8)
     stock = models.IntegerField(default=0)
+    current_stock = models.IntegerField(default=0)
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -88,9 +107,12 @@ class Item(models.Model):
         return f"{self.id} - {self.name}"
 
 class ParchageInvoiceItem(models.Model):
-    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='order_ingredient')
+    """
+    Order Item
+    """
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='parchage_items')
     quantity =  models.CharField(max_length=100)    
-    supplier_order = models.ForeignKey(SupplierInvoice, on_delete=models.SET_NULL, null=True, blank=True, related_name='order_ingredient')
+    supplier_parchange = models.ForeignKey(SupplierInvoice, on_delete=models.SET_NULL, null=True, blank=True, related_name='parchage_items')
     price =  models.DecimalField(max_digits=12, decimal_places=8) 
     
     created_at = models.DateTimeField(auto_now_add=True)
@@ -103,7 +125,7 @@ class Waste(models.Model):
     date = models.DateField()
     responsible = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='waste', null=True,  blank=True) 
     note = models.TextField(null=True, blank=True)
-    
+    total_loss_amount  = models.DecimalField(max_digits=12, decimal_places=8)   
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
