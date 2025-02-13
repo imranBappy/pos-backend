@@ -18,6 +18,8 @@ class Unit(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(max_length=100, null=True, blank=True)
     
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     def __str__(self):
         return f"{self.id} - {self.name}"
 
@@ -28,6 +30,8 @@ class Supplier(models.Model):
     email_address = models.CharField(max_length=30, null=True, blank=True)
     address = models.TextField(null=True, blank=True)
     
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     def __str__(self):
         return f"{self.id} - {self.name}"
 
@@ -39,10 +43,11 @@ class Supplier(models.Model):
 
 
 class SupplierInvoice(models.Model):    
-    due = models.DecimalField(max_digits=12, decimal_places=8 , null=True, blank=True, default=0)
+    due = models.DecimalField(max_digits=15, decimal_places=8 , null=True, blank=True, default=0)
     due_payment_date = models.DateField(null=True, blank=True)
     invoice_number = models.CharField(max_length=50, unique=True)
-    amount = models.DecimalField(max_digits=12, decimal_places=8, default=0)
+    amount = models.DecimalField(max_digits=15, decimal_places=8, default=0)
+    paid_amount  = models.DecimalField(max_digits=15, decimal_places=8, default=0)
     status = models.CharField(max_length=100, choices=PURCHASE_STATUS_CHOICES)
     supplier = models.ForeignKey(Supplier,on_delete=models.SET , null=True, blank=True, related_name='orders') # one to many
     invoice_image = models.CharField(max_length=255, null=True, blank=True)
@@ -51,18 +56,18 @@ class SupplierInvoice(models.Model):
     
     def __str__(self):
         return f"{self.id} - {self.status} - {self.amount}"
-    # invoice_number, amount, images, items
+    class Meta:
+        ordering = ['-created_at']  
 
 class SupplierPayment(models.Model):
-    supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, related_name="supplier_payments")
     invoice = models.ForeignKey(SupplierInvoice, on_delete=models.CASCADE, related_name="payments", null=True, blank=True)
-    amount_paid = models.DecimalField(max_digits=10, decimal_places=2)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
     payment_method = models.CharField(max_length=50, choices=[
-        ('Cash', 'Cash'),
-        ('Bank Transfer', 'Bank Transfer'),
-        ('Cheque', 'Cheque'),
+        ('CASH', 'Cash'),
+        ('BANK TRANSFER', 'Bank Transfer'),
+        ('CHEQUE', 'Cheque'),
+        ('CARD', 'Card'),
     ])
-    reference_number = models.CharField(max_length=100, blank=True, null=True)
     trx_id = models.CharField(
         max_length=100,
         unique=True, 
@@ -78,8 +83,10 @@ class SupplierPayment(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
-        return f"Payment of {self.amount_paid}  for Invoice {self.invoice.invoice_number if self.invoice else 'N/A'}"
-    
+        return f"Payment of {self.amount}  for Invoice {self.invoice.invoice_number if self.invoice else 'N/A'}"
+    class Meta:
+        ordering = ['-created_at']  
+
 class ItemCategory(models.Model):
     image = models.CharField(max_length=250, null=True, blank=True)
     name = models.CharField(max_length=100)
@@ -90,37 +97,41 @@ class ItemCategory(models.Model):
     
     def __str__(self):
         return f"{self.id} - {self.name}"
-   
+    class Meta:
+        ordering = ['-created_at']  
 class Item(models.Model):
     name = models.CharField(max_length=100)    
     category = models.ForeignKey(ItemCategory, related_name='items', on_delete=models.SET_NULL, null=True, blank=True )
-    unit = models.ForeignKey(Unit, on_delete=models.SET_NULL,null=True, blank=True, related_name='ingredients' )
+    unit = models.ForeignKey(Unit, on_delete=models.CASCADE, related_name='items' )
     alert_stock = models.IntegerField(default=0)
-    sku = models.CharField(max_length=100)
-    price = models.DecimalField(max_digits=12, decimal_places=8)
+    sku = models.CharField(max_length=100, unique=True)
     stock = models.IntegerField(default=0)
-    current_stock = models.IntegerField(default=0)
+    current_stock = models.IntegerField(default=0) 
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     def __str__(self):
         return f"{self.id} - {self.name}"
+    class Meta:
+        ordering = ['-created_at']  
 
 class ParchageInvoiceItem(models.Model):
     """
     Order Item
     """
     item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='parchage_items')
-    quantity =  models.CharField(max_length=100)    
-    supplier_parchange = models.ForeignKey(SupplierInvoice, on_delete=models.SET_NULL, null=True, blank=True, related_name='parchage_items')
+    quantity =  models.IntegerField(default=0)    
+    supplier_Invoice = models.ForeignKey(SupplierInvoice, on_delete=models.SET_NULL, null=True, blank=True, related_name='parchage_items')
     price =  models.DecimalField(max_digits=12, decimal_places=8) 
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
-        return f"{self.id} - {self.supplier.name}"
-    
+        return f"{self.id} "
+    class Meta:
+        ordering = ['-created_at']  
+
 class Waste(models.Model):
     date = models.DateField()
     responsible = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='waste', null=True,  blank=True) 
@@ -131,7 +142,9 @@ class Waste(models.Model):
     
     def __str__(self):
         return f"{self.id} -  {self.responsible.name}"
-    
+    class Meta:
+        ordering = ['-created_at']  
+
 class WasteItem(models.Model):
     waste = models.ForeignKey(Waste,on_delete=models.CASCADE, related_name='waste_ingredient')
     ingredient = models.ForeignKey(Item,on_delete=models.CASCADE, related_name='waste_ingredient')
@@ -143,5 +156,5 @@ class WasteItem(models.Model):
 
     def __str__(self):
         return f"{self.id} - {self.ingredient.name}"
-
-
+    class Meta:
+        ordering = ['-created_at']  

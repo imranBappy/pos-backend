@@ -68,12 +68,12 @@ class Product(models.Model):
         ordering = ['-created_at']  
         
 class Ingredient(models.Model):
-    item =  models.ForeignKey(Item, on_delete=models.SET_NULL, null=True, blank=True), 
-    product = models.ForeignKey(Item, on_delete=models.CASCADE),
-    quantity = models.DecimalField(max_digits=5,decimal_places=2)
+    item =  models.ForeignKey(Item, on_delete=models.SET_NULL, null=True, blank=True,related_name='ingredients' ), 
+    product = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='ingredients'),
+    quantity = models.IntegerField()
     
     def __str__(self):
-        return f"{self.id} - {self.product.name}"
+        return f"{self.id} - {self.product.name} - {self.item.name}"
 
 # Extra some food with product. 
 class ExtraFood(models.Model):
@@ -213,8 +213,8 @@ class Coupon(models.Model):
 class Order(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="orders")
     type = models.CharField(max_length=100, choices=ORDER_TYPE_CHOICES)
-    final_amount = models.DecimalField(max_digits=12, decimal_places=8, default=0)
-    amount = models.DecimalField(max_digits=12, decimal_places=8)
+    final_amount = models.DecimalField(max_digits=12, decimal_places=8, default=0) #order amount 
+    amount = models.DecimalField(max_digits=12, decimal_places=8) # paid amount
     due = models.DecimalField(max_digits=12, decimal_places=8 , null=True, blank=True, default=0)
     due_payment_date = models.DateField(null=True, blank=True)
     

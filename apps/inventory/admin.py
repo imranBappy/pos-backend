@@ -15,7 +15,7 @@ class SupplierInvoiceAdmin(admin.ModelAdmin):
 
 @admin.register(SupplierPayment)
 class SupplierPaymentAdmin(admin.ModelAdmin):
-    list_display = ('id', 'supplier', 'invoice', 'amount_paid', 'payment_method', 'reference_number', 'created_at', 'updated_at')
+    list_display = ('id',  'invoice', 'amount', 'payment_method',  'created_at', 'updated_at')
 
 @admin.register(ItemCategory)
 class ItemCategoryAdmin(admin.ModelAdmin):
@@ -23,7 +23,7 @@ class ItemCategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Item)
 class ItemAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'category', 'unit', 'alert_stock', 'sku', 'price', 'stock', 'created_at', 'updated_at')
+    list_display = ('id', 'name', 'category', 'unit', 'alert_stock', 'sku', 'stock', 'created_at', 'updated_at')
 
 @admin.register(ParchageInvoiceItem)
 class ParchageInvoiceItemAdmin(admin.ModelAdmin):

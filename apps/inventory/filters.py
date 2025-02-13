@@ -76,7 +76,7 @@ class ItemFilter(BaseFilterOrderBy):
 
 class ParchageInvoiceItemFilter(BaseFilterOrderBy):
     price = filters.CharFilter(lookup_expr="icontains", field_name="price")
-    
+    supplier_invoice  = filters.CharFilter(lookup_expr='exact', field_name='supplier_Invoice')
     class Meta:
         model = ParchageInvoiceItem
         fields = "__all__"

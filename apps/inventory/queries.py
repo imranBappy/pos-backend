@@ -50,7 +50,7 @@ class Query(graphene.ObjectType):
     def resolve_suppliers(self, info, **kwargs):
         return Supplier.objects.all()
 
-    @isAuthenticated([UserRole.ADMIN, UserRole.MANAGER, UserRole.CHEF, UserRole.WAITER])
+    # @isAuthenticated([UserRole.ADMIN, UserRole.MANAGER, UserRole.CHEF, UserRole.WAITER])
     def resolve_supplier_invoice(self, info, id):
         return get_object_by_kwargs(SupplierInvoice, {"id": id})
 
@@ -58,11 +58,11 @@ class Query(graphene.ObjectType):
     def resolve_supplier_invoices(self, info, **kwargs):
         return SupplierInvoice.objects.all()
 
-    @isAuthenticated([UserRole.ADMIN, UserRole.MANAGER, UserRole.CHEF, UserRole.WAITER])
+    # @isAuthenticated([UserRole.ADMIN, UserRole.MANAGER, UserRole.CHEF, UserRole.WAITER])
     def resolve_supplier_payment(self, info, id):
         return get_object_by_kwargs(SupplierPayment, {"id": id})
 
-    @isAuthenticated([UserRole.ADMIN])
+    # @isAuthenticated([UserRole.ADMIN])
     def resolve_supplier_payments(self, info, **kwargs):
         return SupplierPayment.objects.all()
 
@@ -78,7 +78,7 @@ class Query(graphene.ObjectType):
     def resolve_item(self, info, id):
         return get_object_by_kwargs(Item, {"id": id})
 
-    # @isAuthenticated([UserRole.ADMIN])
+    @isAuthenticated([UserRole.ADMIN])
     def resolve_items(self, info, **kwargs):
         return Item.objects.all()
 
@@ -86,7 +86,7 @@ class Query(graphene.ObjectType):
     def resolve_parchage_invoice_item(self, info, id):
         return get_object_by_kwargs(ParchageInvoiceItem, {"id": id})
 
-    @isAuthenticated([UserRole.ADMIN])
+    # @isAuthenticated([UserRole.ADMIN])
     def resolve_parchage_invoice_items(self, info, **kwargs):
         return ParchageInvoiceItem.objects.all()
 

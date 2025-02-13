@@ -21,6 +21,7 @@ class SupplierInvoiceForm(forms.ModelForm):
 
 class SupplierPaymentForm(forms.ModelForm):
     id = forms.CharField(required=False)
+    due_payment_date = forms.DateField(required=False)
     class Meta:
         model = SupplierPayment
         fields = "__all__"
@@ -33,6 +34,8 @@ class ItemCategoryForm(forms.ModelForm):
 
 class ItemForm(forms.ModelForm):
     id = forms.CharField(required=False)
+    stock = forms.IntegerField(required=False)
+    current_stock = forms.IntegerField(required=False)
     class Meta:
         model = Item
         fields = "__all__"

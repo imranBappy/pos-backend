@@ -99,7 +99,6 @@ class OrderCUD(DjangoFormMutation):
             input['order_id'] = order_id
         
         if form.is_valid()  == False:
-            print(form.errors)
             return create_graphql_error(form) 
         
         
