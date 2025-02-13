@@ -190,13 +190,56 @@ class OrderProductCUD(DjangoFormMutation):
         form_class = OrderProductForm
 
     def mutate_and_get_payload(self, info, **input):
-        instance = get_object_or_none(OrderProduct, id=input.get('id'))
-        
+        id=input.get('id')
+        instance = get_object_or_none(OrderProduct, id=id)
         form = OrderProductForm(input, instance=instance)
-        if form.is_valid():
-            order = form.save()
-            return OrderProductCUD( success=True, id=order.id)
-        create_graphql_error(form)
+
+        if not form.is_valid():
+            return create_graphql_error(form)
+
+        ingredients = Ingredient.objects.filter(product=input['product'])
+        quantity = input['quantity']
+
+        # for update 
+        if id:
+            order_product = OrderProduct.objects.get(id=id)
+            pre_quantity = order_product.quantity
+            for ingredient in ingredients:
+                current_stock = ingredient.item.current_stock
+                ingredient.item.current_stock = current_stock +  (pre_quantity * ingredient.quantity)
+                ingredient.item.save()
+
+        
+        for ingredient in ingredients:
+            current_stock = ingredient.item.current_stock
+            ingredient.item.current_stock = current_stock -  (quantity * ingredient.quantity)
+            ingredient.item.save()
+      
+        
+        order = form.save()
+        return OrderProductCUD( success=True, id=order.id)
+        
+class OrderProductInput(graphene.InputObjectType):
+    product = graphene.ID(required=True)
+    quantity = graphene.Int(required=True)
+class CheckIngredientAvailable(graphene.Mutation):
+    success = graphene.Boolean() 
+    message = graphene.String()
+
+    class Arguments:
+        order_products = graphene.List(graphene.NonNull(OrderProductInput))
+    
+    def mutate(self, info, order_products):
+        for item in order_products:
+            ingredients =  Ingredient.objects.filter(product=item['product'])
+            if ingredients.count():
+                for ingredient in ingredients:
+                    quantity  = item['quantity']
+                    total_quantity = quantity * ingredient.quantity
+                    current_stock = ingredient.item.current_stock
+                    if (current_stock- total_quantity ) < 0:
+                        return CheckIngredientAvailable(success=False,message=f"There is no enough {ingredient.item.name} in stock.")
+        return CheckIngredientAvailable(success=True,message="Ingredients stock are enough")
 
 class DeleteOrderProduct(graphene.Mutation):
     message = graphene.String()
@@ -332,3 +375,5 @@ class Mutation(graphene.ObjectType):
     order_type_update = OrderTypeUpdate.Field()
     delete_ingredient = DeleteIngredient.Field()
     ingredient_cud = IngredientCUD.Field()
+    check_ingredient_available = CheckIngredientAvailable.Field()
+    

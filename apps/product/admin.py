@@ -1,8 +1,13 @@
 from django.contrib import admin
 
 # Register your models here.
-from .models import Category,Payment, TableBooking, Product, Order, OrderProduct, ExtraFood, Floor, FloorTable
+from .models import Ingredient, Category,Payment, TableBooking, Product, Order, OrderProduct, ExtraFood, Floor, FloorTable
 
+
+@admin.register(Ingredient)
+class IngredientAdmin(admin.ModelAdmin):
+    list_display = ('id', 'quantity', 'product', 'item')
+    fields = ('item', 'product', 'quantity')  
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):

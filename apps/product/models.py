@@ -9,6 +9,32 @@ from datetime import timedelta
 import uuid
 from django.utils import timezone
 
+
+class ORDER_TYPE_CHOICES(models.TextChoices):
+    DELIVERY = 'DELIVERY', 'Delivery'
+    PICKUP = 'PICKUP', 'Pickup'
+    DINE_IN = 'DINE_IN', 'Dine In'
+
+
+class ORDER_STATUS_CHOICES(models.TextChoices):
+    PENDING = 'PENDING', 'Pending'
+    COMPLETED = 'COMPLETED', 'Completed'
+    CANCELLED = 'CANCELLED', 'Cancelled'
+    DUE = 'DUE', 'Due'
+
+
+PAYMENT_METHOD_CHOICES = [
+        ("CASH", "Cash"),
+        ("CARD", "Card"),
+    ]
+
+class PAYMENT_STATUS_CHOICES(models.TextChoices):
+    PENDING = 'PENDING', 'Pending'
+    COMPLETED = 'COMPLETED', 'Completed'
+    FAILED = 'FAILED', 'Failed'
+    REFUNDED = 'REFUNDED', 'REFUNDED'
+  
+
 class Category(models.Model):
     parent = models.ForeignKey('self', blank=True, null=True, on_delete=models.CASCADE,  related_name='subcategories')
     name = models.CharField(max_length=100, unique=True)
@@ -68,12 +94,12 @@ class Product(models.Model):
         ordering = ['-created_at']  
         
 class Ingredient(models.Model):
-    item =  models.ForeignKey(Item, on_delete=models.SET_NULL, null=True, blank=True,related_name='ingredients' ), 
-    product = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='ingredients'),
+    item =  models.ForeignKey(Item, on_delete=models.SET_NULL, null=True, blank=True,related_name='ingredients' )
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='ingredients')
     quantity = models.IntegerField()
     
     def __str__(self):
-        return f"{self.id} - {self.product.name} - {self.item.name}"
+        return f"{self.id} "
 
 # Extra some food with product. 
 class ExtraFood(models.Model):
@@ -91,30 +117,6 @@ class ExtraFood(models.Model):
     class Meta:
         ordering = ['-created_at']
 
-class ORDER_TYPE_CHOICES(models.TextChoices):
-    DELIVERY = 'DELIVERY', 'Delivery'
-    PICKUP = 'PICKUP', 'Pickup'
-    DINE_IN = 'DINE_IN', 'Dine In'
-
-
-class ORDER_STATUS_CHOICES(models.TextChoices):
-    PENDING = 'PENDING', 'Pending'
-    COMPLETED = 'COMPLETED', 'Completed'
-    CANCELLED = 'CANCELLED', 'Cancelled'
-    DUE = 'DUE', 'Due'
-
-
-PAYMENT_METHOD_CHOICES = [
-        ("CASH", "Cash"),
-        ("CARD", "Card"),
-    ]
-
-class PAYMENT_STATUS_CHOICES(models.TextChoices):
-    PENDING = 'PENDING', 'Pending'
-    COMPLETED = 'COMPLETED', 'Completed'
-    FAILED = 'FAILED', 'Failed'
-    REFUNDED = 'REFUNDED', 'REFUNDED'
-  
 
 class Floor(models.Model):
     name = models.CharField(max_length=100, unique=True)

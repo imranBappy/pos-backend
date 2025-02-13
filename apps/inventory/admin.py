@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Unit, Supplier, SupplierInvoice, SupplierPayment, ItemCategory, Item, ParchageInvoiceItem, Waste, WasteItem
+from apps.inventory.models import Unit, Supplier, SupplierInvoice, SupplierPayment, ItemCategory, Item, ParchageInvoiceItem, Waste, WasteItem
 
 @admin.register(Unit)
 class UnitAdmin(admin.ModelAdmin):
