@@ -1,15 +1,15 @@
 import graphene
 from apps.base.utils import get_object_or_none, generate_message, create_graphql_error
 from apps.outlet.models import Outlet
-from .objectType import CategoryType, ProductType, OrderProductType, OrderType, PaymentType
+from .objectType import IngredientType , CategoryType, ProductType, OrderProductType, OrderType, PaymentType
 from apps.base.utils import get_object_by_kwargs
 from backend.authentication import isAuthenticated
 
 from apps.kitchen.models import Kitchen
 from datetime import datetime
 from graphene_django.forms.mutation import DjangoFormMutation
-from .forms import ProductForm, CategoryForm, OrderForm, OrderProductForm, FloorForm, FloorTableForm, PaymentForm
-from apps.product.models import Category,TableBooking, Product, Order,ORDER_STATUS_CHOICES,PAYMENT_STATUS_CHOICES, OrderProduct, Floor, FloorTable, Payment
+from .forms import IngredientForm, ProductForm, CategoryForm, OrderForm, OrderProductForm, FloorForm, FloorTableForm, PaymentForm
+from apps.product.models import Ingredient, Category,TableBooking, Product, Order,ORDER_STATUS_CHOICES,PAYMENT_STATUS_CHOICES, OrderProduct, Floor, FloorTable, Payment
 from apps.accounts.models import Address, UserRole
 import json 
 from django.utils.timezone import now
@@ -19,6 +19,30 @@ from graphql import GraphQLError
 import random
 import string
 import uuid
+
+
+class IngredientCUD(DjangoFormMutation):
+    message = graphene.String()
+    success = graphene.Boolean()
+    ingredient = graphene.Field(IngredientType)
+    
+    class Meta:
+        form_class = IngredientForm
+    
+    @isAuthenticated([UserRole.MANAGER, UserRole.ADMIN])
+    def mutate_and_get_payload(self, info, **input):
+            
+        instance = get_object_or_none(Ingredient, id=input.get('id'))
+        form = IngredientForm(input, instance=instance)
+        if not form.is_valid(): 
+            create_graphql_error(form)
+        
+        ingredient = form.save()
+        return IngredientCUD(
+                message="Created successfully",
+                success=True,
+                ingredient=Ingredient
+            )
 
 class CategoryCUD(DjangoFormMutation):
     message = graphene.String()
@@ -283,7 +307,17 @@ class PaymentCUD(DjangoFormMutation):
             print(e)    
             raise GraphQLError(message="Payment failed!")
             
-
+class DeleteIngredient(graphene.Mutation):
+    message = graphene.String()
+    success = graphene.Boolean()    
+    class Arguments:
+        id = graphene.ID(required=True)
+    
+    @isAuthenticated([UserRole.ADMIN, UserRole.MANAGER])
+    def mutate(self, info, id):
+        ingredient = get_object_by_kwargs(Ingredient, {"id": id})
+        ingredient.delete()
+        return DeleteIngredient(success=True, message="Deleted!")
 
 class Mutation(graphene.ObjectType):
     product_cud = ProductCUD.Field()
@@ -296,4 +330,5 @@ class Mutation(graphene.ObjectType):
     payment_cud = PaymentCUD.Field()
     delete_order_product = DeleteOrderProduct.Field()
     order_type_update = OrderTypeUpdate.Field()
-    
+    delete_ingredient = DeleteIngredient.Field()
+    ingredient_cud = IngredientCUD.Field()

@@ -1,8 +1,15 @@
-from .models import Product, Category, Order, OrderProduct,  ExtraFood, Floor, FloorTable, Payment
+from .models import Ingredient, Product, Category, Order, OrderProduct,  ExtraFood, Floor, FloorTable, Payment
 import django_filters as filters
 from apps.base.filters import BaseFilterOrderBy
 from django.db.models import Q
 from datetime import timedelta
+
+class IngredientFilter(BaseFilterOrderBy):
+    class Meta:
+        model = Ingredient
+        fields = '__all__'
+    
+    
 
 class ProductFilter(BaseFilterOrderBy):
     tag = filters.CharFilter(lookup_expr="exact", field_name="tag")

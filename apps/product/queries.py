@@ -1,14 +1,17 @@
 import graphene
 
-from .models import Category, Product, Order, OrderProduct, Address, Floor, FloorTable, Payment
+from .models import Ingredient, Category, Product, Order, OrderProduct, Address, Floor, FloorTable, Payment
 from apps.accounts.models import Address
 from apps.base.utils import get_object_by_kwargs
-from .objectType import CategoryType, ProductType, SubCategoryType, PaymentType, OrderType, OrderProductType, FloorType, FloorTableType
+from .objectType import IngredientType, CategoryType, ProductType, SubCategoryType, PaymentType, OrderType, OrderProductType, FloorType, FloorTableType
 from graphene_django.filter import DjangoFilterConnectionField
 from apps.product.tasks import release_expired_bookings, booking_expired
 
 
 class Query(graphene.ObjectType):
+    ingredient = graphene.Field(IngredientType, id=graphene.ID(required=True))
+    ingredients = DjangoFilterConnectionField(IngredientType)
+
     category = graphene.Field(CategoryType, id=graphene.ID(required=True))
     categories = DjangoFilterConnectionField(CategoryType)
     
@@ -35,16 +38,18 @@ class Query(graphene.ObjectType):
     payment = graphene.Field(PaymentType, id=graphene.ID(required=False), order=graphene.ID(required=False))
     payments = DjangoFilterConnectionField(PaymentType)
     
+    def resolve_ingredient(self, info, id):
+        return get_object_by_kwargs(Ingredient, {"id": id})
+    def resolve_ingredients(self, info ,**kwargs):
+        return Ingredient.objects.all()
 
     def resolve_category(self, info, id):
         return get_object_by_kwargs(Category, {"id": id})
-     
     def resolve_categories(self, info ,**kwargs):
         return Category.objects.order_by("-created_at")
 
     def resolve_subcategory(self, info, id):
         return get_object_by_kwargs(Category, {"id": id})
-     
     def resolve_subcategories(self, info, **kwargs):
         return Category.objects.filter(parent=kwargs.get("parent_id"))
         
@@ -89,7 +94,6 @@ class Query(graphene.ObjectType):
      
     def resolve_payments(self, info, **kwargs):
         return Payment.objects.all()
-    
     
     
     def elastic_search(self, info, **kwargs):
