@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Oswald, Playfair_Display, Lato } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/components/provider/theme-provider";
+import MainLayout from "@/layout/MainLayout";
 
 const playfairDisplay = Playfair_Display({ // for heading
   variable: "--font-playfair-display",
@@ -34,16 +34,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${playfairDisplay.variable} ${oswald.variable} ${lato.variable} antialiased`}
+        className={`${playfairDisplay.variable} ${oswald.variable} ${lato.variable} scroll-smooth  relative antialiased`}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
+        <MainLayout >
           {children}
-        </ThemeProvider>
+        </MainLayout>
       </body>
     </html>
   );

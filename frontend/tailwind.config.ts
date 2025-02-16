@@ -69,9 +69,9 @@ export default {
 				sm: 'calc(var(--radius) - 4px)'
 			},
 			fontFamily: {
-				playfair: ['var(--font-playfair-display)', 'serif'],
-				oswald: ['var(--font-oswald)', 'sans-serif'],
-				lato: ['var(--font-lato)', 'sans-serif'],
+				playfair: ['var(--font-playfair-display)', 'serif'], // title
+				oswald: ['var(--font-oswald)', 'sans-serif'], // 
+				lato: ['var(--font-lato)', 'sans-serif'], //body
 			}
 		}
 	},

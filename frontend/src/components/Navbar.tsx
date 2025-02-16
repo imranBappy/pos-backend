@@ -1,27 +1,20 @@
+"use client";
+
 import Image from 'next/image';
-import React from 'react';
 import Logo from '@/assets/logo.png'
-import { Button } from './ui/button';
 import Link from 'next/link';
 import { User, Search } from 'lucide-react';
-import { CartButton } from '@/components';
 import SearchInput from './SearchInput';
 import ThemeButton from './ThemeButton';
+import { Button } from "@/components/ui/button"
+import useAuth from '@/hooks/use-auth';
+import Profile from './Profile';
 
-// #FFC400
-// #0074D9
-// #FF5733
-// #F4F4F4
-// #333333
-// #00B894
-// #FF6F61
-// #28A745
-// #DC3545
-// #FFC107
 
 const Navbar = () => {
+    const auth = useAuth()
     return (
-        <div className="navbar border-b h-[80px] dark:bg-gray-deep ">
+        <div className="navbar border-b h-[80px]   bg-gray-deep     ">
             <div className="container">
                 <div className="navbar-wrap  h-[80px]  flex items-center justify-between">
                     <div className="logo">
@@ -32,24 +25,27 @@ const Navbar = () => {
                     <div className="search hidden md:block">
                         <SearchInput />
                     </div>
-                    <div className="account-cart flex items-center gap-3">
-                        <div>
-                            <Button className=' md:hidden px-3  font-oswald  text-base' variant={'ghost'}>
-                                <Link href={'/login'} className='flex items-center gap-2' >
-                                    <Search className="text-4xl" />
-                                    <span>Search</span>
-                                </Link>
-                            </Button>
-                            <Button className=' font-oswald  px-3 text-base' variant={'ghost'}>
+                    <div className="flex items-center gap-3">
+                        <Button className=' md:hidden px-3  font-oswald  text-base' variant={'secondary'}>
+                            <Link href={'/login'} className='flex items-center gap-2' >
+                                <Search className="text-4xl" />
+                            </Link>
+                        </Button>
+                        {
+                            auth?.isAuthenticated ? (
+                                <Profile
+                                    user={auth?.user}
+                                />
+                            ) : (<Button className=' font-oswald  px-3 text-base' variant={'ghost'}>
                                 <Link href={'/login'} className='flex items-center gap-2' >
                                     <User className="text-4xl" />
                                     <span>Sing in</span>
                                 </Link>
-                            </Button>
-                        </div>
-                        <CartButton count={0} />
+                            </Button>)
+                        }
                         <ThemeButton />
                     </div>
+
                 </div>
             </div>
         </div >
