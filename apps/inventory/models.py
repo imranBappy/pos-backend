@@ -27,8 +27,10 @@ class Supplier(models.Model):
     name = models.CharField(max_length=100)
     phone_number = models.CharField(max_length=15)
     whatsapp_number = models.CharField(max_length=15, null=True, blank=True)
-    email_address = models.CharField(max_length=30, null=True, blank=True)
+    email_address = models.EmailField(unique=True)
     address = models.TextField(null=True, blank=True)
+    contact_person = models.CharField(max_length=100)
+    branch =  models.CharField(max_length=100, null=True, blank=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -50,6 +50,7 @@ class SupplierCUD(DjangoFormMutation):
                 success=True,
                 supplier=supplier
             )
+        print(form)
         create_graphql_error(form)
 class SupplierInvoiceCUD(DjangoFormMutation):
     message = graphene.String()
@@ -227,10 +228,7 @@ class ParchageInvoiceItemCUD(DjangoFormMutation):
         if input.get("id"): #  item stock update for update operation
             pre_quantity  = instance.quantity
             current_quantity = input.get('quantity')
-            print(f"pre_quantity : {pre_quantity}\ncurrent_quantity : {current_quantity}")
-            print(f"item.stock : {item.stock}")
             item.stock = (item.stock - pre_quantity) + current_quantity 
-            print(f"item.stock : {item.stock}")
             item.current_stock = (item.current_stock - pre_quantity) + current_quantity 
 
         # item save

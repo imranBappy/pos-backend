@@ -5,6 +5,8 @@ from django.db.models import Q
 from datetime import timedelta
 
 class IngredientFilter(BaseFilterOrderBy):
+    product = filters.CharFilter(lookup_expr="exact", field_name="product")
+
     class Meta:
         model = Ingredient
         fields = '__all__'

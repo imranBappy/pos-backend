@@ -8,7 +8,7 @@ from backend.authentication import isAuthenticated
 from django.db.models import Q
 from django.contrib.auth.models import Group
 from graphene import Enum
-
+from hello import users100
 
 class AddressTypeEnum(Enum):
     HOME = 'HOME'
@@ -26,7 +26,7 @@ class Query(graphene.ObjectType):
     
     roles = graphene.List(RoleType)
 
-    @isAuthenticated()
+    # @isAuthenticated()
     def resolve_users(self, info,  **kwargs):
         return User.objects.all()
     
