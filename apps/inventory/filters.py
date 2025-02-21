@@ -1,7 +1,7 @@
 from django_filters import rest_framework as filters
 from .models import Unit, Supplier, SupplierInvoice, SupplierPayment, ItemCategory, Item, ParchageInvoiceItem, Waste, WasteItem
-from django.db.models import Q
 from apps.base.filters import BaseFilterOrderBy
+from django.db.models import Q, ExpressionWrapper, F, FloatField
 
 class UnitFilter(BaseFilterOrderBy):
     name = filters.CharFilter(lookup_expr="icontains", field_name="name")
@@ -17,7 +17,7 @@ class SupplierFilter(BaseFilterOrderBy):
         model = Supplier
         fields = "__all__"
 
-    def filter_search(self, queryset, name, value):
+    def filter_search(self, queryset, _, value):
         return queryset.filter(Q(name__icontains=value) | Q(phone_number__icontains=value) | Q(whatsapp_number__icontains=value) |   Q(email_address__icontains=value) |   Q(address__icontains=value) )
     
 class SupplierInvoiceFilter(BaseFilterOrderBy):
@@ -67,8 +67,27 @@ class ItemFilter(BaseFilterOrderBy):
         return queryset.filter(Q(name__icontains=value) )
     category = filters.NumberFilter(lookup_expr="exact", field_name="category")
     price = filters.NumberFilter(lookup_expr="gte", field_name="price")
-    alert_stock = filters.NumberFilter(lookup_expr="exact", field_name="stock")
+    safety_stock = filters.NumberFilter(lookup_expr="exact", field_name="stock")
     stock = filters.NumberFilter(lookup_expr="gte", field_name="stock")
+
+    order_by = filters.CharFilter(method="filter_order_by")
+    def filter_order_by(self, queryset, name, value):
+        if value == 'stock_level':
+            return queryset.filter(safety_stock__gt=0).annotate(
+                stock_level_temp=ExpressionWrapper(
+                    F('current_stock') * 1.0 / F('safety_stock'),
+                    output_field=FloatField()
+                )
+            ).order_by('stock_level_temp')
+        elif value == '-stock_level':
+            return queryset.filter(safety_stock__gt=0).annotate(
+                stock_level_temp=ExpressionWrapper(
+                    F('current_stock') * 1.0 / F('safety_stock'),
+                    output_field=FloatField()
+                )
+            ).order_by('-stock_level_temp')
+        return queryset.order_by(value)
+    
     class Meta:
         model = Item
         fields = "__all__"

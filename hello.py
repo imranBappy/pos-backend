@@ -1,5 +1,4 @@
 import random
-import datetime
 import faker
 from apps.accounts.models import User
 

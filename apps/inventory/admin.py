@@ -23,7 +23,7 @@ class ItemCategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Item)
 class ItemAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'category', 'unit', 'alert_stock', 'sku', 'stock', 'created_at', 'updated_at')
+    list_display = ('id', 'name', 'category', 'unit', 'safety_stock', 'sku', 'stock', 'created_at', 'updated_at')
 
 @admin.register(ParchageInvoiceItem)
 class ParchageInvoiceItemAdmin(admin.ModelAdmin):

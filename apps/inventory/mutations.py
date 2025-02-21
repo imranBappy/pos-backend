@@ -2,7 +2,7 @@ import graphene
 from graphene_django.forms.mutation import DjangoFormMutation
 from .models import Unit, Supplier, SupplierInvoice, SupplierPayment, ItemCategory, Item, ParchageInvoiceItem, Waste, WasteItem
 from .forms import UnitForm, SupplierForm, SupplierInvoiceForm, SupplierPaymentForm, ItemCategoryForm, ItemForm, ParchageInvoiceItemForm, WasteForm, WasteItemForm
-from .inputObjectTypes import UnitType, SupplierType, SupplierInvoiceType, SupplierPaymentType, ItemCategoryType, ItemType, ParchageInvoiceItemType, WasteType, WasteItemType
+from .objectTypes import UnitType, SupplierType, SupplierInvoiceType, SupplierPaymentType, ItemCategoryType, ItemType, ParchageInvoiceItemType, WasteType, WasteItemType
 from apps.base.utils import get_object_or_none, create_graphql_error
 from backend.authentication import isAuthenticated
 from apps.accounts.models import UserRole

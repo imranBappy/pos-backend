@@ -1,5 +1,4 @@
 import graphene
-from django.core.mail import send_mail
 from django.contrib.auth.models import Group
 from django.db import transaction
 from apps.accounts.models import User as CustomUser, UserOTP, UserRole, Address,Building
@@ -9,7 +8,7 @@ from backend.authentication import TokenManager, isAuthenticated
 from apps.accounts.forms import UserForm, AddressForm, BuildingForm
 from django.conf import settings
 from graphene_django.forms.mutation import DjangoFormMutation
-from apps.base.utils import generate_message, create_graphql_error, generate_otp, get_object_or_none
+from apps.base.utils import  create_graphql_error, generate_otp, get_object_or_none
 
 base_url = settings.WEBSITE_URL
 

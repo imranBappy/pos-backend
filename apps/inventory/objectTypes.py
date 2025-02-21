@@ -52,6 +52,7 @@ class ItemCategoryType(DjangoObjectType):
 
 class ItemType(DjangoObjectType):
     id = graphene.ID(required=True)
+    stock_level = graphene.Float(required=True)  # Add stock_level as a field
     
     class Meta:
         model = Item
@@ -59,14 +60,20 @@ class ItemType(DjangoObjectType):
         interfaces = (graphene.relay.Node,)
         connection_class = CountConnection
 
+        
+    def resolve_stock_level(self, info):
+        if self.safety_stock == 0:
+            return float('inf') if self.current_stock > 0 else 0
+        return self.current_stock / self.safety_stock
+
 class ParchageInvoiceItemType(DjangoObjectType):
     id = graphene.ID(required=True)
-    
     class Meta:
         model = ParchageInvoiceItem
         filterset_class = ParchageInvoiceItemFilter
         interfaces = (graphene.relay.Node,)
         connection_class = CountConnection
+
 
 class WasteType(DjangoObjectType):
     id = graphene.ID(required=True)

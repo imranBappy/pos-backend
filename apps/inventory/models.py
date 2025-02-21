@@ -1,8 +1,5 @@
 from django.db import models
-from django.utils import timezone
-from decimal import Decimal
-from datetime import timedelta
-from apps.accounts.models import Address, User  # Adjust the import path as needed.
+from apps.accounts.models import  User  # Adjust the import path as needed.
 class PAYMENT_STATUS_CHOICES(models.TextChoices):
     PENDING = 'PENDING', 'Pending'
     COMPLETED = 'COMPLETED', 'Completed'
@@ -39,8 +36,8 @@ class Supplier(models.Model):
 
 # # Need another model for saveing what will buy from this  supplier
 # class Save(models.Model):
-
-    
+#
+#    
 #     pass
 
 
@@ -48,6 +45,9 @@ class SupplierInvoice(models.Model):
     due = models.DecimalField(max_digits=15, decimal_places=8 , null=True, blank=True, default=0)
     due_payment_date = models.DateField(null=True, blank=True)
     invoice_number = models.CharField(max_length=50, unique=True)
+    po_number = models.CharField(max_length=50, unique=True, null=True, blank=True)
+
+    final_amount = models.DecimalField(max_digits=12, decimal_places=8, default=0) #order amount 
     amount = models.DecimalField(max_digits=15, decimal_places=8, default=0)
     paid_amount  = models.DecimalField(max_digits=15, decimal_places=8, default=0)
     status = models.CharField(max_length=100, choices=PURCHASE_STATUS_CHOICES)
@@ -105,13 +105,24 @@ class Item(models.Model):
     name = models.CharField(max_length=100)    
     category = models.ForeignKey(ItemCategory, related_name='items', on_delete=models.SET_NULL, null=True, blank=True )
     unit = models.ForeignKey(Unit, on_delete=models.CASCADE, related_name='items' )
-    alert_stock = models.IntegerField(default=0)
+    safety_stock = models.IntegerField(default=0)
     sku = models.CharField(max_length=100, unique=True)
     stock = models.IntegerField(default=0)
     current_stock = models.IntegerField(default=0) 
+
+    image = models.TextField(blank=True, null=True, default="")
+    vat = models.FloatField(default=0.0)
     
+    @property
+    def stock_level(self):
+        if self.safety_stock == 0:
+            return float('inf') if self.current_stock > 0 else 0
+
+        return self.current_stock / self.safety_stock
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
     def __str__(self):
         return f"{self.id} - {self.name}"
     class Meta:
@@ -125,6 +136,7 @@ class ParchageInvoiceItem(models.Model):
     quantity =  models.IntegerField(default=0)    
     supplier_Invoice = models.ForeignKey(SupplierInvoice, on_delete=models.SET_NULL, null=True, blank=True, related_name='parchage_items')
     price =  models.DecimalField(max_digits=12, decimal_places=8) 
+    vat = models.DecimalField(max_digits=12, decimal_places=8, default=0)
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

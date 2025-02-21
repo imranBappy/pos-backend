@@ -1,7 +1,7 @@
 import graphene
 from graphene_django.filter import DjangoFilterConnectionField
 from .models import Unit, Supplier, SupplierInvoice, SupplierPayment, ItemCategory, Item, ParchageInvoiceItem, Waste, WasteItem
-from .inputObjectTypes import UnitType, SupplierType, SupplierInvoiceType, SupplierPaymentType, ItemCategoryType, ItemType, ParchageInvoiceItemType, WasteType, WasteItemType
+from .objectTypes import UnitType, SupplierType, SupplierInvoiceType, SupplierPaymentType, ItemCategoryType, ItemType, ParchageInvoiceItemType, WasteType, WasteItemType
 from apps.base.utils import get_object_by_kwargs
 from backend.authentication import isAuthenticated
 from apps.accounts.models import UserRole
@@ -78,7 +78,7 @@ class Query(graphene.ObjectType):
     def resolve_item(self, info, id):
         return get_object_by_kwargs(Item, {"id": id})
 
-    @isAuthenticated([UserRole.ADMIN])
+    # @isAuthenticated([UserRole.ADMIN])
     def resolve_items(self, info, **kwargs):
         return Item.objects.all()
 
