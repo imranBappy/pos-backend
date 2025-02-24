@@ -1,14 +1,16 @@
+from decimal import Decimal
 import graphene
 from graphene_django.forms.mutation import DjangoFormMutation
-from .models import Unit, Supplier, SupplierInvoice, SupplierPayment, ItemCategory, Item, ParchageInvoiceItem, Waste, WasteItem
-from .forms import UnitForm, SupplierForm, SupplierInvoiceForm, SupplierPaymentForm, ItemCategoryForm, ItemForm, ParchageInvoiceItemForm, WasteForm, WasteItemForm
-from .objectTypes import UnitType, SupplierType, SupplierInvoiceType, SupplierPaymentType, ItemCategoryType, ItemType, ParchageInvoiceItemType, WasteType, WasteItemType
+from apps.inventory.models import Unit, Supplier, SupplierInvoice, SupplierPayment, ItemCategory, Item, ParchageInvoiceItem, Waste, WasteCategory, WasteItem
+from apps.inventory.forms import UnitForm, SupplierForm, SupplierInvoiceForm, SupplierPaymentForm, ItemCategoryForm, ItemForm, ParchageInvoiceItemForm, WasteForm, WasteItemForm
+from apps.inventory.objectTypes import UnitType, SupplierType, SupplierInvoiceType, SupplierPaymentType, ItemCategoryType, ItemType, ParchageInvoiceItemType, WasteType, WasteItemType
 from apps.base.utils import get_object_or_none, create_graphql_error
 from backend.authentication import isAuthenticated
-from apps.accounts.models import UserRole
+from apps.accounts.models import User, UserRole
 from apps.product.models import ORDER_STATUS_CHOICES
 from apps.product.models import PAYMENT_STATUS_CHOICES
 from graphql import GraphQLError
+from django.db import transaction
 
 class UnitCUD(DjangoFormMutation):
     message = graphene.String()
@@ -243,6 +245,149 @@ class ParchageInvoiceItemCUD(DjangoFormMutation):
             )
         create_graphql_error(form)
 
+
+class WasteItemInputType(graphene.InputObjectType):
+    ingredient = graphene.String(required=True)
+    quantity =  graphene.Decimal(required=True)    
+
+class CreateWasteInputType(graphene.InputObjectType):
+    date = graphene.Date(required=True)
+    category = graphene.String(required=True)
+    responsible = graphene.String(required=False)
+    notes = graphene.String(required=False)
+    items = graphene.List(WasteItemInputType, required=True)
+    invoice  = graphene.String(required=False)
+
+class CreateWaste(graphene.Mutation):
+    class Arguments:
+        input = CreateWasteInputType(required=True)
+
+    success = graphene.Boolean()
+    
+    def mutate(root, info, input):
+        try:
+            with transaction.atomic():
+                # Step 1: Retrieve required objects
+                invoice = CreateWaste.get_supplier_invoice(input.invoice) if input.invoice else None
+
+                # Step 2: Validate that all waste items come from the same invoice
+                if invoice:
+                    CreateWaste.validate_invoice_items(invoice, input.items)
+
+                # Step 3: Create Waste record
+                waste_data = {
+                    "date": input.date,
+                    "category": CreateWaste.get_waste_category(input.category),
+                    "responsible": CreateWaste.get_responsible_user(input.responsible) if input.responsible else None,
+                    "invoice": invoice,
+                    "notes": input.notes,
+                    "estimated_cost": Decimal(0)
+                }
+                
+                waste = Waste.objects.create(**waste_data)
+
+                # Step 4: Process Waste Items and Calculate Estimated Cost
+                estimated_cost = CreateWaste.process_waste_items(waste, input.items)
+
+                # Step 5: Update estimated_cost
+                waste.estimated_cost = estimated_cost
+                waste.save()
+
+                return CreateWaste(success=True)
+        except Exception as e:
+            print(e)
+            raise GraphQLError(str(e))
+    
+    @staticmethod
+    def get_waste_category(categoryId):
+        """Retrieve WasteCategory or raise an error if not found"""
+        try:
+            return WasteCategory.objects.get(id=categoryId)
+        except WasteCategory.DoesNotExist:
+            raise ValueError(f"Invalid waste category: {categoryId}")
+        
+    @staticmethod
+    def get_supplier_invoice(invoice_number):
+        """Retrieve SupplierInvoice or raise an error if not found"""
+        try:
+            return SupplierInvoice.objects.get(invoice_number=invoice_number)
+        except SupplierInvoice.DoesNotExist:
+            raise ValueError(f"Invoice {invoice_number} not found")
+    
+    @staticmethod
+    def get_responsible_user(userId):
+        """Retrieve User or raise an error if not found"""
+        try:
+            return User.objects.get(id=userId)
+        except User.DoesNotExist:
+            raise ValueError(f"User {userId} not found")
+
+    @staticmethod
+    def validate_invoice_items(invoice, items):
+        """Ensure all waste items belong to the given invoice"""
+        invoice_item_ids = set(
+            ParchageInvoiceItem.objects.filter(supplier_Invoice=invoice)
+            .values_list('item__id', flat=True)
+        )
+     
+        for item_data in items:
+            item = Item.objects.get(id=item_data.ingredient)
+            if item.id not in invoice_item_ids:
+                raise ValueError(f"Item {item.name} does not belong to invoice {invoice.invoice_number}")
+
+    @staticmethod
+    def process_waste_items(waste, items):
+        """Handles stock validation, stock deduction, updates ParchageInvoiceItem, and calculates estimated cost"""
+        total_loss_amount = Decimal(0)
+
+        for item_data in items:
+            item = Item.objects.get(id=item_data.ingredient)
+
+            # Validate stock availability
+            if item.current_stock < item_data.quantity:
+                raise ValueError(f"Not enough stock for {item.name}. Available: {item.current_stock}, Needed: {item_data.quantity}")
+
+            # Deduct stock from Item
+            item.current_stock -= item_data.quantity
+            item.stock -= item_data.quantity
+            item.save()
+
+            # Determine item price for loss_amount calculation
+            price_per_unit = None
+            if waste.invoice:
+                purchase_item = ParchageInvoiceItem.objects.filter(
+                    item=item, supplier_Invoice=waste.invoice
+                ).first()
+                if purchase_item:
+                    price_per_unit = purchase_item.price  # Use invoice price
+            
+            if price_per_unit is None:
+                price_per_unit = item.price if hasattr(item, 'price') else Decimal(0)  # Use item's general price
+            
+            loss_amount = price_per_unit * Decimal(item_data.quantity)
+            total_loss_amount += loss_amount
+
+            # Deduct from ParchageInvoiceItem if invoice is linked
+            if waste.invoice and purchase_item:
+                if purchase_item.quantity < item_data.quantity:
+                    raise ValueError(
+                        f"Cannot waste {item_data.quantity} of {item.name}, only {purchase_item.quantity} available in invoice."
+                    )
+
+                purchase_item.quantity -= item_data.quantity
+                purchase_item.save()
+
+            # Create WasteItem entry
+            WasteItem.objects.create(
+                waste=waste,
+                ingredient=item,
+                quantity=item_data.quantity,
+                loss_amount=loss_amount
+            )
+
+        return total_loss_amount
+
+
 class WasteCUD(DjangoFormMutation):
     message = graphene.String()
     success = graphene.Boolean()
@@ -432,6 +577,7 @@ class Mutation(graphene.ObjectType):
     parchage_invoice_item_cud = ParchageInvoiceItemCUD.Field()
     waste_cud = WasteCUD.Field()
     waste_item_cud = WasteItemCUD.Field()
+    create_waste = CreateWaste.Field()
 
     # Delete Mutations
     delete_unit = DeleteUnit.Field()

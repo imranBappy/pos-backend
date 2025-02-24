@@ -47,7 +47,7 @@ class SupplierInvoice(models.Model):
     invoice_number = models.CharField(max_length=50, unique=True)
     po_number = models.CharField(max_length=50, unique=True, null=True, blank=True)
 
-    final_amount = models.DecimalField(max_digits=12, decimal_places=8, default=0) #order amount 
+    final_amount = models.DecimalField(max_digits=12, decimal_places=8, default=0) # order amount 
     amount = models.DecimalField(max_digits=15, decimal_places=8, default=0)
     paid_amount  = models.DecimalField(max_digits=15, decimal_places=8, default=0)
     status = models.CharField(max_length=100, choices=PURCHASE_STATUS_CHOICES)
@@ -146,16 +146,31 @@ class ParchageInvoiceItem(models.Model):
     class Meta:
         ordering = ['-created_at']  
 
+class WasteCategory(models.Model):
+    name = models.CharField(max_length=100, unique=True)  # Example: Expired, Leftovers, Spoiled
+    description = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+
+
 class Waste(models.Model):
     date = models.DateField()
-    responsible = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='waste', null=True,  blank=True) 
-    note = models.TextField(null=True, blank=True)
-    total_loss_amount  = models.DecimalField(max_digits=12, decimal_places=8)   
+    category = models.ForeignKey(WasteCategory, on_delete=models.CASCADE, related_name='wasted_ingredients')
+    invoice = models.ForeignKey(SupplierInvoice, on_delete=models.SET_NULL, null=True, blank=True, related_name='wasted_ingredients')
+    responsible = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='wasted_ingredients', null=True,  blank=True) 
+
+    estimated_cost  = models.DecimalField(max_digits=12, decimal_places=8) 
+    notes = models.TextField(null=True, blank=True)
+  
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
+    
+
     def __str__(self):
-        return f"{self.id} -  {self.responsible.name}"
+        return f"{self.id} -   "
     class Meta:
         ordering = ['-created_at']  
 
@@ -164,6 +179,7 @@ class WasteItem(models.Model):
     ingredient = models.ForeignKey(Item,on_delete=models.CASCADE, related_name='waste_ingredient')
     quantity =  models.CharField(max_length=100)    
     loss_amount = models.DecimalField(max_digits=12, decimal_places=8)   
+    
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

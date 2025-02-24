@@ -1,14 +1,11 @@
 import graphene
-from apps.product.models import Category, Product
 from apps.accounts.objectType import UserType, AddressType, RoleType, BuildingType
 from graphene_django.filter import DjangoFilterConnectionField
-from apps.accounts.models import User, Address, UserRole, Building
-from apps.base.utils import get_object_by_id, get_object_by_kwargs
+from apps.accounts.models import User, Address, Building
+from apps.base.utils import  get_object_by_kwargs
 from backend.authentication import isAuthenticated
-from django.db.models import Q
 from django.contrib.auth.models import Group
 from graphene import Enum
-from hello import users100
 
 class AddressTypeEnum(Enum):
     HOME = 'HOME'
@@ -45,7 +42,7 @@ class Query(graphene.ObjectType):
                 return User.objects.get(phone=phone)
             raise User.DoesNotExist
         except User.DoesNotExist:
-            raise Exception(f"User  not found.")
+            raise Exception("User  not found.")
     
        
     def resolve_address(self, info, id=None, user=None, address_type=None):
@@ -54,7 +51,7 @@ class Query(graphene.ObjectType):
             return Address.objects.get(id=id)
         elif user and address_type:
             return Address.objects.get(user=user, address_type=address_type)
-        return gAddress.objects.get(user=user )
+        return Address.objects.get(user=user )
      
     def resolve_addresses(self, info, **kwargs):
         return Address.objects.all()
