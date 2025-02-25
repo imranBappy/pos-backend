@@ -5,7 +5,7 @@ git stash
 git pull origin master
 
 echo "Activating virtual environment..."
-source venv/bin/activate
+source venv/bin/activate.fish
 
 echo "Installing dependencies..."
 pip install -r requirements.txt
