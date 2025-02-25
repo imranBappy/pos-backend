@@ -1,11 +1,9 @@
 import graphene
-
-from .models import Ingredient, Category, Product, Order, OrderProduct, Address, Floor, FloorTable, Payment
-from apps.accounts.models import Address
+from apps.product.models import Ingredient, Category, Product, Order, OrderProduct, Floor, FloorTable, Payment
 from apps.base.utils import get_object_by_kwargs
-from .objectType import IngredientType, CategoryType, ProductType, SubCategoryType, PaymentType, OrderType, OrderProductType, FloorType, FloorTableType
+from apps.product.objectType import IngredientType, CategoryType, ProductType, SubCategoryType, PaymentType, OrderType, OrderProductType, FloorType, FloorTableType
 from graphene_django.filter import DjangoFilterConnectionField
-from apps.product.tasks import release_expired_bookings, booking_expired
+from apps.product.tasks import booking_expired
 
 
 class Query(graphene.ObjectType):

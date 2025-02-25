@@ -1,7 +1,6 @@
 from django import forms
-from  apps.product.models import Ingredient, ORDER_TYPE_CHOICES, PAYMENT_METHOD_CHOICES, ORDER_STATUS_CHOICES,Coupon, Product, Category, Order, OrderProduct, User,  FloorTable,Floor, ExtraFood, Payment
-from apps.outlet.models import Outlet
-from apps.accounts.models import Address
+from  apps.product.models import Ingredient, Coupon, Product, Category, Order, OrderProduct, FloorTable,Floor, Payment
+
 
 class IngredientForm(forms.ModelForm):
     id = forms.CharField(required=False)

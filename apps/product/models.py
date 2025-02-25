@@ -1,12 +1,11 @@
 from django.db import models
-from apps.accounts.models import User, Address
+from apps.accounts.models import User
 from apps.outlet.models import Outlet
 from apps.kitchen.models import Kitchen
 from apps.inventory.models import Supplier,Item
 
 from django.utils.timezone import now
 from datetime import timedelta
-import uuid
 from django.utils import timezone
 
 
@@ -59,7 +58,7 @@ class Product(models.Model):
         ("POPULAR", "Popular"),
         ("FEATURED", "Featured")
     ]
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100,  unique=True)
     price = models.DecimalField(max_digits=12, decimal_places=8)
     description = models.TextField(null=True, blank=True)
     images = models.TextField(blank=True, null=True, default="[]")
@@ -207,7 +206,7 @@ class Coupon(models.Model):
         return amount
                 
     def apply(self):
-        self.times_used = F('times_used') + 1
+        # self.times_used = F('times_used') + 1
         self.save(update_fields=['times_used'])           
     
     def __str__(self):

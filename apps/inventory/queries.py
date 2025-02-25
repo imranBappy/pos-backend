@@ -1,12 +1,16 @@
 import graphene
 from graphene_django.filter import DjangoFilterConnectionField
-from .models import Unit, Supplier, SupplierInvoice, SupplierPayment, ItemCategory, Item, ParchageInvoiceItem, Waste, WasteItem
-from .objectTypes import UnitType, SupplierType, SupplierInvoiceType, SupplierPaymentType, ItemCategoryType, ItemType, ParchageInvoiceItemType, WasteType, WasteItemType
+from .models import WasteCategory, Unit, Supplier, SupplierInvoice, SupplierPayment, ItemCategory, Item, ParchageInvoiceItem, Waste, WasteItem
+from .objectTypes import WasteCategoryType, UnitType, SupplierType, SupplierInvoiceType, SupplierPaymentType, ItemCategoryType, ItemType, ParchageInvoiceItemType, WasteType, WasteItemType
 from apps.base.utils import get_object_by_kwargs
 from backend.authentication import isAuthenticated
 from apps.accounts.models import UserRole
 
 class Query(graphene.ObjectType):
+
+    waste_category = graphene.Field(WasteCategoryType, id=graphene.ID(required=True))
+    waste_categories = DjangoFilterConnectionField(WasteCategoryType)
+
     unit = graphene.Field(UnitType, id=graphene.ID(required=True))
     units = DjangoFilterConnectionField(UnitType)
 
@@ -33,6 +37,15 @@ class Query(graphene.ObjectType):
     
     waste_item = graphene.Field(WasteItemType, id=graphene.ID(required=True))
     waste_items = DjangoFilterConnectionField(WasteItemType)
+
+    @isAuthenticated([UserRole.ADMIN, UserRole.MANAGER, UserRole.CHEF, UserRole.WAITER])
+    def resolve_waste_category(self, info, id):
+        return get_object_by_kwargs(WasteCategory, {"id": id})
+
+    @isAuthenticated([UserRole.ADMIN, UserRole.MANAGER, UserRole.CHEF, UserRole.WAITER])
+    def resolve_waste_categories(self, info, **kwargs):
+        return WasteCategory.objects.all()
+
 
     @isAuthenticated([UserRole.ADMIN, UserRole.MANAGER, UserRole.CHEF, UserRole.WAITER])
     def resolve_unit(self, info, id):

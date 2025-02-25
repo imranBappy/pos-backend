@@ -91,7 +91,7 @@ class SupplierPayment(models.Model):
 
 class ItemCategory(models.Model):
     image = models.CharField(max_length=250, null=True, blank=True)
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100,  unique=True)
     description = models.TextField(max_length=100, null=True, blank=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
@@ -102,7 +102,7 @@ class ItemCategory(models.Model):
     class Meta:
         ordering = ['-created_at']  
 class Item(models.Model):
-    name = models.CharField(max_length=100)    
+    name = models.CharField(max_length=100, unique=True)    
     category = models.ForeignKey(ItemCategory, related_name='items', on_delete=models.SET_NULL, null=True, blank=True )
     unit = models.ForeignKey(Unit, on_delete=models.CASCADE, related_name='items' )
     safety_stock = models.IntegerField(default=0)

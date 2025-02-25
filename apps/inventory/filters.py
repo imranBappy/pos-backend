@@ -1,7 +1,15 @@
 from django_filters import rest_framework as filters
-from .models import Unit, Supplier, SupplierInvoice, SupplierPayment, ItemCategory, Item, ParchageInvoiceItem, Waste, WasteItem
+from .models import WasteCategory, Unit, Supplier, SupplierInvoice, SupplierPayment, ItemCategory, Item, ParchageInvoiceItem, Waste, WasteItem
 from apps.base.filters import BaseFilterOrderBy
 from django.db.models import Q, ExpressionWrapper, F, FloatField
+
+
+class WasteCategoryFilter(BaseFilterOrderBy):
+    name = filters.CharFilter(lookup_expr="icontains", field_name="name")
+    
+    class Meta:
+        model = WasteCategory
+        fields = "__all__"
 
 class UnitFilter(BaseFilterOrderBy):
     name = filters.CharFilter(lookup_expr="icontains", field_name="name")
