@@ -1,8 +1,8 @@
 import graphene
 from backend.count_connection import CountConnection
 from graphene_django import DjangoObjectType
-from apps.inventory.models import Unit,WasteCategory, Supplier, SupplierInvoice, SupplierPayment, ItemCategory, Item, ParchageInvoiceItem, Waste, WasteItem
-from apps.inventory.filters import WasteCategoryFilter, UnitFilter, SupplierFilter, SupplierInvoiceFilter, SupplierPaymentFilter, ItemCategoryFilter, ItemFilter, ParchageInvoiceItemFilter, WasteFilter, WasteItemFilter
+from apps.inventory.models import Unit,WasteCategory, Supplier, SupplierInvoice, SupplierPayment, ItemCategory, Item, PurchaseInvoiceItem, Waste, WasteItem
+from apps.inventory.filters import WasteCategoryFilter, UnitFilter, SupplierFilter, SupplierInvoiceFilter, SupplierPaymentFilter, ItemCategoryFilter, ItemFilter, PurchaseInvoiceItemFilter, WasteFilter, WasteItemFilter
 
 
 class WasteCategoryType(DjangoObjectType):
@@ -74,11 +74,11 @@ class ItemType(DjangoObjectType):
             return float('inf') if self.current_stock > 0 else 0
         return self.current_stock / self.safety_stock
 
-class ParchageInvoiceItemType(DjangoObjectType):
+class PurchaseInvoiceItemType(DjangoObjectType):
     id = graphene.ID(required=True)
     class Meta:
-        model = ParchageInvoiceItem
-        filterset_class = ParchageInvoiceItemFilter
+        model = PurchaseInvoiceItem
+        filterset_class = PurchaseInvoiceItemFilter
         interfaces = (graphene.relay.Node,)
         connection_class = CountConnection
 

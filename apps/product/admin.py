@@ -1,8 +1,12 @@
 from django.contrib import admin
 
 # Register your models here.
-from .models import Ingredient, Category,Payment, TableBooking, Product, Order, OrderProduct, ExtraFood, Floor, FloorTable
+from apps.product.models import OrderIngredients, Ingredient, Category,Payment, TableBooking, Product, Order, OrderProduct, ExtraFood, Floor, FloorTable
 
+
+@admin.register(OrderIngredients)
+class OrderIngredientsAdmin(admin.ModelAdmin):
+    list_display = ('id', 'quantity','item')
 
 @admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):

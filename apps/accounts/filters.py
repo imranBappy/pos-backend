@@ -4,9 +4,7 @@ import django_filters as filters
 from apps.base.filters import BaseFilterOrderBy
 from django.db.models import Q
 
-
 class UserFilter(BaseFilterOrderBy):
-    
     name = filters.CharFilter(lookup_expr='icontains')
     email = filters.CharFilter(lookup_expr='icontains')
     role = filters.NumberFilter(lookup_expr="exact", field_name="role")
@@ -16,6 +14,8 @@ class UserFilter(BaseFilterOrderBy):
     search = filters.CharFilter(method='filter_search')
     created_at_start = filters.DateFilter(method='filter_created_at_range', field_name='start')
     created_at_end = filters.DateFilter(method='filter_created_at_range', field_name='end')
+    is_employee  = filters.BooleanFilter(method='filter_employee')
+
     
     class Meta:
         model = User
@@ -25,9 +25,13 @@ class UserFilter(BaseFilterOrderBy):
             'privacy_policy_accepted', 'privacy_policy_accepted', 'is_active'
         ]  
     
+    def filter_employee(self, queryset, name, value):
+        print(value)
+        return queryset.filter(role__name__in=['MANAGER','CHEF','WAITER'])
+
     
     def filter_search(self, queryset, name, value):
-        return queryset.filter(Q(name__icontains=value) | Q(email__icontains=value) | Q(phone__icontains=value) )
+        return queryset.filter(Q(name__icontains=value) | Q(email__icontains=value) | Q(phone__icontains=value)).order_by("name")
     
     def filter_created_at_range(self, queryset, name, value):
         if name == 'start':

@@ -1,8 +1,14 @@
-from .models import Ingredient, Product, Category, Order, OrderProduct,  ExtraFood, Floor, FloorTable, Payment
+from .models import Ingredient, TableBooking, Product, Category, Order, OrderProduct,  ExtraFood, Floor, FloorTable, Payment
 import django_filters as filters
 from apps.base.filters import BaseFilterOrderBy
 from django.db.models import Q
 from datetime import timedelta
+
+class TableBookingFilter(BaseFilterOrderBy):
+    class Meta:
+        model = TableBooking
+        fields = '__all__'
+
 
 class IngredientFilter(BaseFilterOrderBy):
     product = filters.CharFilter(lookup_expr="exact", field_name="product")
@@ -36,7 +42,7 @@ class ProductFilter(BaseFilterOrderBy):
             Q(name__icontains=value) |
             Q(tag__icontains=value) |
             Q(description__icontains=value)
-        )
+        ).order_by("name")
 
     def filter_created_at_range(self, queryset, name, value):
         if name == 'start':
@@ -63,7 +69,8 @@ class CategoryFilter(BaseFilterOrderBy):
         fields = '__all__'
     
     def filter_search(self, queryset, name, value):
-        return queryset.filter(Q(name__icontains=value))
+        return queryset.filter(Q(name__icontains=value)).order_by("name")
+
 
     def filter_is_category(self, queryset, name, value):
         return queryset.filter(parent=None) if value else queryset
@@ -107,7 +114,8 @@ class FloorFilter(BaseFilterOrderBy):
     def filter_search(self, queryset, _, value):
         return queryset.filter(
             Q(name__icontains=value)
-        )
+        ).order_by("name")
+
     
 class FloorTableFilter(BaseFilterOrderBy):
     floor = filters.NumberFilter(lookup_expr="exact", field_name="floor")
@@ -119,7 +127,8 @@ class FloorTableFilter(BaseFilterOrderBy):
     def filter_search(self, queryset, _, value):
         return queryset.filter(
             Q(name__icontains=value)
-        )
+        ).order_by("name")
+
 
 
 class PaymentFilter(BaseFilterOrderBy):

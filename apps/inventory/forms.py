@@ -1,5 +1,11 @@
 from django import forms
-from apps.inventory.models import Unit, Supplier, SupplierInvoice, SupplierPayment, ItemCategory, Item, ParchageInvoiceItem, Waste, WasteItem
+from apps.inventory.models import WasteCategory, Unit, Supplier, SupplierInvoice, SupplierPayment, ItemCategory, Item, PurchaseInvoiceItem, Waste, WasteItem
+
+class WasteCategoryForm(forms.ModelForm):
+    id = forms.CharField(required=False)
+    class Meta:
+        model = WasteCategory
+        fields = "__all__"
 
 class UnitForm(forms.ModelForm):
     id = forms.CharField(required=False)
@@ -40,10 +46,11 @@ class ItemForm(forms.ModelForm):
         model = Item
         fields = "__all__"
 
-class ParchageInvoiceItemForm(forms.ModelForm):
+class PurchaseInvoiceItemForm(forms.ModelForm):
     id = forms.CharField(required=False)
+    total_quantity=forms.DecimalField(required=False)
     class Meta:
-        model = ParchageInvoiceItem
+        model = PurchaseInvoiceItem
         fields = "__all__"
 
 class WasteForm(forms.ModelForm):

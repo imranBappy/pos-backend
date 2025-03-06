@@ -1,7 +1,7 @@
 import graphene
-from apps.product.models import Ingredient, Category, Product, Order, OrderProduct, Floor, FloorTable, Payment
+from apps.product.models import Ingredient, Category, Product, Order, OrderProduct, Floor, FloorTable, Payment, TableBooking
 from apps.base.utils import get_object_by_kwargs
-from apps.product.objectType import IngredientType, CategoryType, ProductType, SubCategoryType, PaymentType, OrderType, OrderProductType, FloorType, FloorTableType
+from apps.product.objectType import IngredientType, CategoryType, TableBookingType, ProductType, SubCategoryType, PaymentType, OrderType, OrderProductType, FloorType, FloorTableType
 from graphene_django.filter import DjangoFilterConnectionField
 from apps.product.tasks import booking_expired
 
@@ -36,8 +36,14 @@ class Query(graphene.ObjectType):
     payment = graphene.Field(PaymentType, id=graphene.ID(required=False), order=graphene.ID(required=False))
     payments = DjangoFilterConnectionField(PaymentType)
     
+    table_booking = graphene.List(TableBookingType)
+
+    def resolve_order_tables(self, info):
+        return TableBooking.objects.all()
+
     def resolve_ingredient(self, info, id):
         return get_object_by_kwargs(Ingredient, {"id": id})
+    
     def resolve_ingredients(self, info ,**kwargs):
         return Ingredient.objects.all()
 

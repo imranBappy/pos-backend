@@ -1,7 +1,7 @@
 import graphene
 from apps.accounts.objectType import UserType, AddressType, RoleType, BuildingType
 from graphene_django.filter import DjangoFilterConnectionField
-from apps.accounts.models import User, Address, Building
+from apps.accounts.models import User, Address, Building, UserRole
 from apps.base.utils import  get_object_by_kwargs
 from backend.authentication import isAuthenticated
 from django.contrib.auth.models import Group
@@ -15,6 +15,9 @@ class Query(graphene.ObjectType):
     users = DjangoFilterConnectionField(UserType)
     me = graphene.Field(UserType)
     user = graphene.Field(UserType,id=graphene.ID(required=False), email=graphene.String(required=False), phone=graphene.String(required=False))
+    
+    
+
     address = graphene.Field(AddressType, id=graphene.ID(required=False), user=graphene.ID(required=False), address_type=graphene.String(required=False))
     addresses = DjangoFilterConnectionField(AddressType)
     
@@ -23,7 +26,7 @@ class Query(graphene.ObjectType):
     
     roles = graphene.List(RoleType)
 
-    # @isAuthenticated()
+    @isAuthenticated([UserRole.ADMIN, UserRole.MANAGER])
     def resolve_users(self, info,  **kwargs):
         return User.objects.all()
     
@@ -32,6 +35,7 @@ class Query(graphene.ObjectType):
         user = info.context.User
         return user
     
+    @isAuthenticated()
     def resolve_user(self, info, id=None, email=None, phone=None):
         try:
             if id:
@@ -52,20 +56,22 @@ class Query(graphene.ObjectType):
         elif user and address_type:
             return Address.objects.get(user=user, address_type=address_type)
         return Address.objects.get(user=user )
-     
+    
+    @isAuthenticated()
     def resolve_addresses(self, info, **kwargs):
         return Address.objects.all()
-    
+    @isAuthenticated()
     def resolve_building(self, info, id=None, address=None):
         if id:
             return get_object_by_kwargs(Building, {'id': id})
         elif address:
             return get_object_by_kwargs(Building, {'address': address})
         return get_object_by_kwargs(Building, { 'address':address, 'id':id })
-     
+    
+    @isAuthenticated()
     def resolve_buildings(self, info, **kwargs):
         return Building.objects.all()
-    
+    @isAuthenticated()
     def resolve_roles(self, info, **kwargs):
         return Group.objects.all()
 

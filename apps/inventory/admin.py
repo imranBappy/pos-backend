@@ -1,11 +1,14 @@
 from django.contrib import admin
-from apps.inventory.models import Unit, Supplier, SupplierInvoice, SupplierPayment, ItemCategory, Item, ParchageInvoiceItem, Waste, WasteCategory, WasteItem
+from apps.inventory.models import InvoiceConsumption, Unit, Supplier, SupplierInvoice, SupplierPayment, ItemCategory, Item, PurchaseInvoiceItem, Waste, WasteCategory, WasteItem
+
+
+@admin.register(InvoiceConsumption)
+class InvoiceConsumptionAdmin(admin.ModelAdmin):
+    list_display = ('id', 'purchase_invoice_item')
 
 @admin.register(WasteCategory)
 class WasteCategoryAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'description')
-
- 
 
 @admin.register(Unit)
 class UnitAdmin(admin.ModelAdmin):
@@ -31,8 +34,8 @@ class ItemCategoryAdmin(admin.ModelAdmin):
 class ItemAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'category', 'unit', 'safety_stock', 'sku', 'stock', 'created_at', 'updated_at')
 
-@admin.register(ParchageInvoiceItem)
-class ParchageInvoiceItemAdmin(admin.ModelAdmin):
+@admin.register(PurchaseInvoiceItem)
+class PurchaseInvoiceItemAdmin(admin.ModelAdmin):
     list_display = ('id', 'item', 'quantity', 'price', 'created_at', 'updated_at')
 
 @admin.register(Waste)

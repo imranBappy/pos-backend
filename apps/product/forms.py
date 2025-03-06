@@ -2,6 +2,7 @@ from django import forms
 from  apps.product.models import Ingredient, Coupon, Product, Category, Order, OrderProduct, FloorTable,Floor, Payment
 
 
+
 class IngredientForm(forms.ModelForm):
     id = forms.CharField(required=False)
     class Meta:

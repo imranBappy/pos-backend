@@ -1,8 +1,8 @@
 from django_filters import rest_framework as filters
-from .models import WasteCategory, Unit, Supplier, SupplierInvoice, SupplierPayment, ItemCategory, Item, ParchageInvoiceItem, Waste, WasteItem
+from .models import WasteCategory, Unit, Supplier, SupplierInvoice, SupplierPayment, ItemCategory, Item, PurchaseInvoiceItem, Waste, WasteItem
 from apps.base.filters import BaseFilterOrderBy
 from django.db.models import Q, ExpressionWrapper, F, FloatField
-
+from decimal import Decimal
 
 class WasteCategoryFilter(BaseFilterOrderBy):
     name = filters.CharFilter(lookup_expr="icontains", field_name="name")
@@ -26,15 +26,41 @@ class SupplierFilter(BaseFilterOrderBy):
         fields = "__all__"
 
     def filter_search(self, queryset, _, value):
-        return queryset.filter(Q(name__icontains=value) | Q(phone_number__icontains=value) | Q(whatsapp_number__icontains=value) |   Q(email_address__icontains=value) |   Q(address__icontains=value) )
+        return queryset.filter(Q(name__icontains=value) | Q(phone_number__icontains=value) | Q(whatsapp_number__icontains=value) |   Q(email_address__icontains=value) |   Q(address__icontains=value) ).order_by("name")
     
 class SupplierInvoiceFilter(BaseFilterOrderBy):
     invoice_number = filters.CharFilter(lookup_expr="icontains", field_name="invoice_number")
     search = filters.CharFilter(method="filter_search")
+    item_id = filters.NumberFilter(method='item_filter')
+    min_stock = filters.NumberFilter(method='item_filter')
+    
+    def item_filter(self, queryset, name, value):
+        item_id = self.data.get('item_id')
+        min_stock = self.data.get('min_stock')
+
+        filters = {}
+
+        if item_id:
+            filters['purchase_items__item__id'] =int(item_id)
+            try:
+                filters['purchase_items__item__id'] = int(item_id)
+            except (ValueError, TypeError):
+                return queryset.none()
+        
+        if min_stock:
+            try:
+                filters['purcase_items__item__current_stock__gte'] = Decimal(min_stock)
+            except (ValueError, TypeError):
+                return queryset.none()
+
+        if filters:
+            return queryset.filter(**filters).distinct()
+        return queryset
+    
     def filter_search(self, queryset, name, value):
         return queryset.filter(
-            Q(supplier__supplier_name__icontains=value)|
-            Q(supplier__supplier_email__icontains=value)|
+            # Q(supplier__supplier_name__icontains=value)|
+            # Q(supplier__supplier_email__icontains=value)|
             Q(invoice_number__icontains=value) |
             Q(status__icontains=value)|
             Q(amount__icontains=value)
@@ -53,7 +79,7 @@ class SupplierPaymentFilter(BaseFilterOrderBy):
             Q(invoice_number__icontains=value) |
             Q(status__icontains=value)|
             Q(amount__icontains=value)
-        )
+        ).order_by("supplier__supplier_name")
     class Meta:
         model = SupplierPayment
         fields = "__all__"
@@ -72,7 +98,7 @@ class ItemCategoryFilter(BaseFilterOrderBy):
 class ItemFilter(BaseFilterOrderBy):
     search = filters.CharFilter(method="filter_search")
     def filter_search(self, queryset, name, value):
-        return queryset.filter(Q(name__icontains=value) )
+        return queryset.filter(Q(name__icontains=value)| Q(sku__icontains=value) ).order_by("name")
     category = filters.NumberFilter(lookup_expr="exact", field_name="category")
     price = filters.NumberFilter(lookup_expr="gte", field_name="price")
     safety_stock = filters.NumberFilter(lookup_expr="exact", field_name="stock")
@@ -101,11 +127,11 @@ class ItemFilter(BaseFilterOrderBy):
         fields = "__all__"
     
 
-class ParchageInvoiceItemFilter(BaseFilterOrderBy):
+class PurchaseInvoiceItemFilter(BaseFilterOrderBy):
     price = filters.CharFilter(lookup_expr="icontains", field_name="price")
     supplier_invoice  = filters.CharFilter(lookup_expr='exact', field_name='supplier_Invoice')
     class Meta:
-        model = ParchageInvoiceItem
+        model = PurchaseInvoiceItem
         fields = "__all__"
 
 class WasteFilter(BaseFilterOrderBy):
@@ -123,7 +149,7 @@ class WasteFilter(BaseFilterOrderBy):
             Q(responsible__responsible_name__icontains=value)|
             Q(responsible__responsible_email__icontains=value)|
             Q(note__icontains=value) |
-            Q(total_loss_amount__icontains=value) 
+            Q(total_loss_amount__icontains=value).order_by("responsible__responsible_name")
         )
 
 class WasteItemFilter(BaseFilterOrderBy):

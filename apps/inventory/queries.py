@@ -1,7 +1,7 @@
 import graphene
 from graphene_django.filter import DjangoFilterConnectionField
-from .models import WasteCategory, Unit, Supplier, SupplierInvoice, SupplierPayment, ItemCategory, Item, ParchageInvoiceItem, Waste, WasteItem
-from .objectTypes import WasteCategoryType, UnitType, SupplierType, SupplierInvoiceType, SupplierPaymentType, ItemCategoryType, ItemType, ParchageInvoiceItemType, WasteType, WasteItemType
+from .models import WasteCategory, Unit, Supplier, SupplierInvoice, SupplierPayment, ItemCategory, Item, PurchaseInvoiceItem, Waste, WasteItem
+from .objectTypes import WasteCategoryType, UnitType, SupplierType, SupplierInvoiceType, SupplierPaymentType, ItemCategoryType, ItemType, PurchaseInvoiceItemType, WasteType, WasteItemType
 from apps.base.utils import get_object_by_kwargs
 from backend.authentication import isAuthenticated
 from apps.accounts.models import UserRole
@@ -29,8 +29,8 @@ class Query(graphene.ObjectType):
     item = graphene.Field(ItemType, id=graphene.ID(required=True))
     items = DjangoFilterConnectionField(ItemType)
 
-    parchage_invoice_item = graphene.Field(ParchageInvoiceItemType, id=graphene.ID(required=True))
-    parchage_invoice_items = DjangoFilterConnectionField(ParchageInvoiceItemType)
+    purchase = graphene.Field(PurchaseInvoiceItemType, id=graphene.ID(required=True))
+    purchase_invoice_items = DjangoFilterConnectionField(PurchaseInvoiceItemType)
 
     waste = graphene.Field(WasteType, id=graphene.ID(required=True))
     wastes = DjangoFilterConnectionField(WasteType)
@@ -63,7 +63,7 @@ class Query(graphene.ObjectType):
     def resolve_suppliers(self, info, **kwargs):
         return Supplier.objects.all()
 
-    # @isAuthenticated([UserRole.ADMIN, UserRole.MANAGER, UserRole.CHEF, UserRole.WAITER])
+    @isAuthenticated([UserRole.ADMIN, UserRole.MANAGER, UserRole.CHEF, UserRole.WAITER])
     def resolve_supplier_invoice(self, info, id):
         return get_object_by_kwargs(SupplierInvoice, {"id": id})
 
@@ -71,11 +71,11 @@ class Query(graphene.ObjectType):
     def resolve_supplier_invoices(self, info, **kwargs):
         return SupplierInvoice.objects.all()
 
-    # @isAuthenticated([UserRole.ADMIN, UserRole.MANAGER, UserRole.CHEF, UserRole.WAITER])
+    @isAuthenticated([UserRole.ADMIN, UserRole.MANAGER, UserRole.CHEF, UserRole.WAITER])
     def resolve_supplier_payment(self, info, id):
         return get_object_by_kwargs(SupplierPayment, {"id": id})
 
-    # @isAuthenticated([UserRole.ADMIN])
+    @isAuthenticated([UserRole.ADMIN])
     def resolve_supplier_payments(self, info, **kwargs):
         return SupplierPayment.objects.all()
 
@@ -91,17 +91,17 @@ class Query(graphene.ObjectType):
     def resolve_item(self, info, id):
         return get_object_by_kwargs(Item, {"id": id})
 
-    # @isAuthenticated([UserRole.ADMIN])
+    @isAuthenticated([UserRole.ADMIN])
     def resolve_items(self, info, **kwargs):
         return Item.objects.all()
 
     @isAuthenticated([UserRole.ADMIN, UserRole.MANAGER, UserRole.CHEF, UserRole.WAITER])
-    def resolve_parchage_invoice_item(self, info, id):
-        return get_object_by_kwargs(ParchageInvoiceItem, {"id": id})
+    def resolve_purchase_invoice_item(self, info, id):
+        return get_object_by_kwargs(PurchaseInvoiceItem, {"id": id})
 
-    # @isAuthenticated([UserRole.ADMIN])
-    def resolve_parchage_invoice_items(self, info, **kwargs):
-        return ParchageInvoiceItem.objects.all()
+    @isAuthenticated([UserRole.ADMIN])
+    def resolve_purchase_invoice_items(self, info, **kwargs):
+        return PurchaseInvoiceItem.objects.all()
 
     @isAuthenticated([UserRole.ADMIN, UserRole.MANAGER, UserRole.CHEF, UserRole.WAITER])
     def resolve_waste(self, info, id):

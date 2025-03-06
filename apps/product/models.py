@@ -2,11 +2,12 @@ from django.db import models
 from apps.accounts.models import User
 from apps.outlet.models import Outlet
 from apps.kitchen.models import Kitchen
-from apps.inventory.models import Supplier,Item
+
 
 from django.utils.timezone import now
 from datetime import timedelta
 from django.utils import timezone
+ 
 
 
 class ORDER_TYPE_CHOICES(models.TextChoices):
@@ -93,12 +94,13 @@ class Product(models.Model):
         ordering = ['-created_at']  
         
 class Ingredient(models.Model):
-    item =  models.ForeignKey(Item, on_delete=models.SET_NULL, null=True, blank=True,related_name='ingredients' )
+    item = models.ForeignKey('inventory.Item', on_delete=models.SET_NULL, null=True, blank=True, related_name='ingredients')
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='ingredients')
-    quantity = models.IntegerField()
+    quantity = models.DecimalField(max_digits=12, decimal_places=8)
     
     def __str__(self):
         return f"{self.id} "
+    
 
 # Extra some food with product. 
 class ExtraFood(models.Model):
@@ -184,7 +186,7 @@ class Coupon(models.Model):
         
         # usage_limit validation
         if self.usage_limit and  self.times_used >= self.usage_limit:
-            raise InvalidCouponError(f"Invalid coupon.")
+            raise InvalidCouponError("Invalid coupon.")
         
         if self.per_user_limit:
             order_count = Order.objects.filter(user=userId, coupon=self).count()
@@ -214,13 +216,13 @@ class Coupon(models.Model):
 class Order(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="orders")
     type = models.CharField(max_length=100, choices=ORDER_TYPE_CHOICES)
-    final_amount = models.DecimalField(max_digits=12, decimal_places=8, default=0) #order amount 
-    amount = models.DecimalField(max_digits=12, decimal_places=8) # paid amount
-    due = models.DecimalField(max_digits=12, decimal_places=8 , null=True, blank=True, default=0)
+    final_amount = models.DecimalField(max_digits=14, decimal_places=8, default=0) #order amount 
+    amount = models.DecimalField(max_digits=14, decimal_places=8) # paid amount
+    due = models.DecimalField(max_digits=14, decimal_places=8 , null=True, blank=True, default=0)
     due_payment_date = models.DateField(null=True, blank=True)
     
     coupon = models.ForeignKey(Coupon, on_delete=models.SET_NULL,null=True ,blank=True, related_name='orders')
-    discount_applied = models.DecimalField(max_digits=12, decimal_places=8 , null=True ,blank=True)
+    discount_applied = models.DecimalField(max_digits=14, decimal_places=8 , null=True ,blank=True)
     
     status = models.CharField(max_length=100, choices=ORDER_STATUS_CHOICES)
     outlet = models.ForeignKey(Outlet, on_delete=models.SET_NULL, null=True, blank=True, related_name="orders")
@@ -266,30 +268,44 @@ class OrderReview(models.Model):
     def __str__(self):
         return f"{self.customer.name} - {self.order.id}: {self.rating} ⭐"
 
-class OrderTable(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="order_tables")
-    floor_table = models.ForeignKey(FloorTable, on_delete=models.CASCADE, related_name="order_tables")
-    booking_time = models.DateTimeField(null=True, blank=True)  # Example additional field
-    additional_notes = models.TextField(null=True, blank=True)  # Example additional field
+
     
 class OrderProduct(models.Model):
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True, related_name="orders")
     quantity = models.IntegerField(default=1)
-    price = models.DecimalField(max_digits=12, decimal_places=8)
-    vat = models.DecimalField(max_digits=12, decimal_places=8, default=0)
+    price = models.DecimalField(max_digits=14, decimal_places=8)
+    vat = models.DecimalField(max_digits=14, decimal_places=8, default=0)
     
     order = models.ForeignKey(Order, on_delete=models.CASCADE, null=True, blank=True, related_name='items') 
     
-    discount = models.DecimalField(max_digits=12, decimal_places=8, default=0)
+    discount = models.DecimalField(max_digits=14, decimal_places=8, default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)    
     def __str__(self):
         return f"{self.id}"
 
+
+class OrderIngredients(models.Model):
+    """
+        par OrderItem ingredients consumption record 
+    """
+    order_product = models.ForeignKey(OrderProduct, on_delete=models.CASCADE, null=True, blank=True, related_name="order_ingredients")
+    item = models.ForeignKey("inventory.Item",on_delete=models.CASCADE, related_name="order_ingredients" )
+    quantity = models.DecimalField(max_digits=12, decimal_places=8, default=0)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.id} - quantity : {self.quantity} - order_product {self.order_product.product.name}"
+    
+    class Meta:
+        ordering = ['-created_at']
+
 class Payment(models.Model):
-    supplier  = models.ForeignKey(Supplier,on_delete=models.SET_NULL, related_name='payments', null=True, blank=True)
+    supplier  = models.ForeignKey("inventory.Supplier",on_delete=models.SET_NULL, related_name='payments', null=True, blank=True)
     order = models.ForeignKey(Order, on_delete=models.SET_NULL, related_name='payments', null=True, blank=True)
-    amount = models.DecimalField(max_digits=12, decimal_places=8)
+    amount = models.DecimalField(max_digits=14, decimal_places=8)
     payment_method = models.CharField(
         max_length=100, 
         choices=PAYMENT_METHOD_CHOICES
@@ -334,3 +350,5 @@ class TableBooking(models.Model):
     class Meta:
         verbose_name = "Table Booking"
         verbose_name_plural = "Table Bookings"
+
+

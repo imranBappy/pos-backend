@@ -1,11 +1,10 @@
 from django.contrib import admin
-from django.urls import path
 from django.http import HttpResponseNotFound
 from django_tenants.admin import TenantAdminMixin
 from django.db import connection
 
 from apps.clients.models import Client, Domain
-from django_tenants.utils import get_tenant_model, get_public_schema_name
+from django_tenants.utils import  get_public_schema_name
  
 
 class DomainInline(admin.StackedInline):
