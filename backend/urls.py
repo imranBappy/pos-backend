@@ -28,9 +28,9 @@ def tenant_admin_view(request):
     if not request.user.is_authenticated or not request.user.is_admin:
         return HttpResponseForbidden("Access Denied")
     return admin.site.urls
+
 urlpatterns = [
     path("admin/", admin.site.urls),
-    # path('admin/', tenant_admin_view),
 
     path("graphql/", csrf_exempt(GraphQLView.as_view(graphiql=True, schema=schema))),
     path('invoice/<int:order_id>/', generate_invoice, name='generate_invoice'),

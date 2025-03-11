@@ -5,7 +5,7 @@ from apps.accounts.models import User as CustomUser, UserOTP, UserRole, Address,
 from apps.accounts.objectType import UserType, AddressType
 from graphql import GraphQLError
 from backend.authentication import TokenManager, isAuthenticated
-from apps.accounts.forms import UserForm, AddressForm, BuildingForm
+from apps.accounts.forms import StaffForm, UserForm, AddressForm, BuildingForm
 from django.conf import settings
 from graphene_django.forms.mutation import DjangoFormMutation
 from apps.base.utils import  create_graphql_error, generate_otp, get_object_or_none
@@ -53,6 +53,107 @@ class RegisterUser(graphene.Mutation):
         new_otp.save()
         return RegisterUser(success=True, message="Registration successful!", id=user.id)
 
+
+class RegisterStaff(graphene.Mutation):
+    """
+        This mutation will be for end customer
+    """
+    class Arguments:
+        name = graphene.String(required=True)
+        email = graphene.String(required=True)
+        password = graphene.String(required=True)
+        role = graphene.ID(required=True)
+        phone = graphene.String(required=False)
+        gender = graphene.String(required=False)
+
+    success = graphene.Boolean()
+    message = graphene.String()
+    id = graphene.ID()
+
+    @isAuthenticated([UserRole.ADMIN, UserRole.MANAGER])
+    @transaction.atomic
+    def mutate(self, info, name, email,password,  role, phone=None, gender=None):
+        email = email.lower()
+        find_user = get_object_or_none(CustomUser, email=email)
+        if find_user is not None:
+            raise GraphQLError(message="Email is already registered.")
+        
+        if phone:
+            find_by_phone_user = get_object_or_none(CustomUser, phone=phone)
+            if find_by_phone_user is not None:
+                raise GraphQLError(message="Phone is already registered.")
+        
+        role = Group.objects.get(id=role) 
+        user = CustomUser.objects.create_user(
+            name=name, 
+            email=email, 
+            password=password, 
+            role=role,
+            is_staff=True,
+            is_verified = False, 
+            phone=phone,
+            gender=gender
+        )
+        user.save()
+        gen_otp = generate_otp()
+        user.send_email_verification(
+            gen_otp, base_url
+        )
+        new_otp=UserOTP(user=user, otp=gen_otp)
+        new_otp.save()
+        return RegisterUser(success=True, message="Registration successful!", id=user.id)
+
+class RegisterStaffV2(DjangoFormMutation):
+    """
+        This mutation will be for end staff
+    """
+    class Meta:
+        form_class = StaffForm
+
+    success = graphene.Boolean()
+    message = graphene.String()
+
+    @isAuthenticated([UserRole.ADMIN, UserRole.MANAGER])
+    @transaction.atomic
+    def mutate_and_get_payload(self, info, **input):
+        email = input.get('email').lower()
+        phone = input.get('phone')
+        
+
+        if not input.get('id'):
+            find_user = get_object_or_none(CustomUser, email=email)
+            if find_user is not None:
+                raise GraphQLError(message="Email is already registered.")
+            
+            if phone:
+                find_by_phone_user = get_object_or_none(CustomUser, phone=phone)
+                if find_by_phone_user is not None:
+                    raise GraphQLError(message="Phone is already registered.")
+            
+
+        instance = get_object_or_none(CustomUser, id=input.get('id'))
+        
+        input['is_staff'] = True
+        input['is_active'] = True
+        input['password'] = input.get('password') ## 
+
+        form = StaffForm(input, instance=instance)
+        
+        if not form.is_valid():
+            raise GraphQLError(create_graphql_error(form))
+        
+        staff = form.save(commit=False)
+
+        password = input.get('password')
+        if password:
+            staff.set_password(password)  # Hashes the password
+            staff.save(update_fields=['password'])  # Ensure only password is updated
+
+        staff.save()
+
+        return RegisterStaffV2(message="Staff is created!", success=True)
+    
+
 class OTPVerification(graphene.Mutation):
     success = graphene.Boolean()
     message = graphene.String()
@@ -98,11 +199,9 @@ class LoginUser(graphene.Mutation):
     @staticmethod
     def mutate(root, info, email, password):
         try:
-            
             if not email:
                 return GraphQLError("Invalid email or password.",)
             user = CustomUser.objects.get(email=email.lower()) 
-
             if not user.check_password(password):
                 return  GraphQLError("Invalid email or password.")
             if not user.is_active:
@@ -117,7 +216,6 @@ class LoginUser(graphene.Mutation):
             token = TokenManager.get_access(payload)
             return LoginUser(token=token,user=user, success=True, message="Login successful.")
         except CustomUser.DoesNotExist:
-            print("user dose not exit")
             return  GraphQLError("Invalid email or password.",)
        
 class PasswordResetMail(graphene.Mutation):
@@ -311,6 +409,9 @@ class BuildingCUD(DjangoFormMutation):
 class Mutation(graphene.ObjectType):
     
     register_user = RegisterUser.Field()
+    register_staff = RegisterStaff.Field()
+    register_staff_v2 = RegisterStaffV2.Field()
+
     login_user = LoginUser.Field()
     otp_verify = OTPVerification.Field()
     password_reset_mail = PasswordResetMail.Field()

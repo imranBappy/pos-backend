@@ -36,8 +36,6 @@ class Supplier(models.Model):
     def __str__(self):
         return f"{self.id} - {self.name}"
 
-
-
 class SupplierInvoice(models.Model):    
     due = models.DecimalField(max_digits=15, decimal_places=8 , null=True, blank=True, default=0)
     due_payment_date = models.DateField(null=True, blank=True)
@@ -99,8 +97,6 @@ class ItemCategory(models.Model):
     class Meta:
         ordering = ['-created_at']  
 
-
-
 class Item(models.Model):
     name = models.CharField(max_length=100)    
     category = models.ForeignKey(ItemCategory, related_name='items', on_delete=models.SET_NULL, null=True, blank=True )
@@ -135,7 +131,7 @@ class PurchaseInvoiceItem(models.Model):
     item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='purchase_items')
     quantity =  models.DecimalField(max_digits=12, decimal_places=8, default=0)   
     total_quantity = models.DecimalField(max_digits=12, decimal_places=8, default=0)   
-    supplier_Invoice = models.ForeignKey(SupplierInvoice, on_delete=models.SET_NULL, null=True, blank=True, related_name='purchase_items')
+    supplier_Invoice = models.ForeignKey(SupplierInvoice, on_delete=models.CASCADE, null=True, blank=True, related_name='purchase_items')
     price =  models.DecimalField(max_digits=14, decimal_places=8) 
     vat = models.DecimalField(max_digits=12, decimal_places=8, default=0)
     
@@ -147,7 +143,6 @@ class PurchaseInvoiceItem(models.Model):
     
     class Meta:
         ordering = ['-created_at']  
-
 
 
 class WasteCategory(models.Model):
@@ -184,7 +179,7 @@ class WasteItem(models.Model):
     quantity =  models.CharField(max_length=100)    
     loss_amount = models.DecimalField(max_digits=14, decimal_places=8)   
     
-
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -199,8 +194,10 @@ class InvoiceConsumption(models.Model):
     waste_item = models.ForeignKey(WasteItem, on_delete=models.CASCADE, blank=True, null=True)
     purchase_invoice_item = models.ForeignKey(PurchaseInvoiceItem, on_delete=models.CASCADE)
     quantity =  models.DecimalField(max_digits=12, decimal_places=8, default=0)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
     def __str__(self):
         return f"{self.id}"
     class Meta:

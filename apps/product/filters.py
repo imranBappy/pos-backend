@@ -1,8 +1,15 @@
-from .models import Ingredient, TableBooking, Product, Category, Order, OrderProduct,  ExtraFood, Floor, FloorTable, Payment
+from apps.product.models import OrderIngredients, Ingredient, TableBooking, Product, Category, Order, OrderProduct,  ExtraFood, Floor, FloorTable, Payment
 import django_filters as filters
 from apps.base.filters import BaseFilterOrderBy
 from django.db.models import Q
 from datetime import timedelta
+
+
+
+class OrderIngredientsFilter(BaseFilterOrderBy):
+    class Meta:
+        model = OrderIngredients
+        fields = '__all__'
 
 class TableBookingFilter(BaseFilterOrderBy):
     class Meta:

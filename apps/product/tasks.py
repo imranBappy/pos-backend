@@ -1,10 +1,10 @@
+from apps.base.mail import send_mail
 from celery import shared_task
 from django.utils.timezone import now
 from apps.product.models import TableBooking
 import logging
 from django.db.models import F
 logger = logging.getLogger(__name__)
-from apps.base.mail import send_mail
 
 def booking_expired():
     """

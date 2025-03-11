@@ -549,8 +549,9 @@ class DeleteSupplier(graphene.Mutation):
             supplier = Supplier.objects.get(pk=id)
             supplier.delete()
             return DeleteSupplier(success=True)  # Return success=True
-        except Supplier.DoesNotExist:
-            return DeleteSupplier(success=False)  # Return success=False
+        except Exception as e:
+            raise GraphQLError(e)
+            
 
 
 class DeleteSupplierInvoice(graphene.Mutation):
@@ -644,11 +645,23 @@ class DeleteWaste(graphene.Mutation):
 
     def mutate(self, info, id):
         try:
-            waste = Waste.objects.get(pk=id)
-            waste.delete()
-            return DeleteWaste(success=True)
-        except Waste.DoesNotExist:
-            return DeleteWaste(success=False)
+            with transaction.atomic():
+                print("hitted")
+                waste = Waste.objects.get(pk=id)
+                waste_ingredient = WasteItem.objects.filter(waste=waste)
+                
+                for item in waste_ingredient:
+                    item.ingredient.current_stock = Decimal(item.ingredient.current_stock) + Decimal(item.quantity)
+                    item.ingredient.save()
+                    invoice_consumption = InvoiceConsumption.objects.get(waste_item=item)
+                    invoice_consumption.purchase_invoice_item.quantity = Decimal(invoice_consumption.purchase_invoice_item.quantity) + Decimal(invoice_consumption.quantity)
+                    invoice_consumption.purchase_invoice_item.save()
+
+                waste.delete()
+                return DeleteWaste(success=True)
+        except Exception as e:
+            print(e)
+            raise GraphQLError(e)
 
 
 class DeleteWasteItem(graphene.Mutation):
@@ -688,4 +701,3 @@ class Mutation(graphene.ObjectType):
     delete_item = DeleteItem.Field()
     delete_purchase_invoice_item = DeletePurchaseInvoiceItem.Field()
     delete_waste = DeleteWaste.Field()
-    delete_waste_item = DeleteWasteItem.Field()

@@ -127,6 +127,7 @@ class Floor(models.Model):
     def __str__(self):
         return f"{self.id}-{self.name}"
     
+
 class FloorTable(models.Model):
     name = models.CharField(max_length=100)
     floor = models.ForeignKey(Floor, on_delete=models.CASCADE, related_name='floor_tables')
@@ -271,13 +272,11 @@ class OrderReview(models.Model):
 
     
 class OrderProduct(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True, related_name="orders")
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True, blank=True, related_name="orders")
     quantity = models.IntegerField(default=1)
     price = models.DecimalField(max_digits=14, decimal_places=8)
     vat = models.DecimalField(max_digits=14, decimal_places=8, default=0)
-    
     order = models.ForeignKey(Order, on_delete=models.CASCADE, null=True, blank=True, related_name='items') 
-    
     discount = models.DecimalField(max_digits=14, decimal_places=8, default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)    
@@ -292,7 +291,7 @@ class OrderIngredients(models.Model):
     order_product = models.ForeignKey(OrderProduct, on_delete=models.CASCADE, null=True, blank=True, related_name="order_ingredients")
     item = models.ForeignKey("inventory.Item",on_delete=models.CASCADE, related_name="order_ingredients" )
     quantity = models.DecimalField(max_digits=12, decimal_places=8, default=0)
-
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

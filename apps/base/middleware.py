@@ -2,7 +2,7 @@
 import jwt
 from django.conf import settings
 from django.utils.deprecation import MiddlewareMixin
-from apps.user.models import User  # Adjust the path to your User model
+from apps.accounts.models import User 
 
 class TokenAuthenticationMiddleware(MiddlewareMixin):
     def process_request(self, request):

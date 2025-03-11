@@ -267,7 +267,7 @@ class OrderCUV2(graphene.Mutation):
                 if not is_new:
                     OrderCUV2._restore_stock_and_delete_items(order)
                 
-                OrderCUV2._validate_stock_and_update(items, order.id)
+                OrderCUV2._validate_stock_and_update(items, order)
                 OrderCUV2._book_table(table_bookings=input.get('table_bookings'),order=order)
 
                 return OrderCUV2(message="Success", success=True, order=order)
@@ -300,8 +300,9 @@ class OrderCUV2(graphene.Mutation):
             raise GraphQLError("This order is not updateable")
         
 
-    def _validate_stock_and_update(items, orderId):
+    def _validate_stock_and_update(items, order):
         """Check ingredient stock levels and update inventory accordingly."""
+        orderId = order.id
         for item in items:
             product = Product.objects.get(id=item['product'])
             quantity = item['quantity']
@@ -322,7 +323,7 @@ class OrderCUV2(graphene.Mutation):
                 raise GraphQLError("Order has not created.")
             
             if not item.discount:
-                item['discount'] = 0
+                item['discount'] = 0 
 
             orderProductForm = OrderProductForm(item)
             if not orderProductForm.is_valid():
@@ -346,6 +347,7 @@ class OrderCUV2(graphene.Mutation):
                     item = ingredient.item,
                 )
                 
+
                 order_ingredients_consumption = order_ingredient
                 needed_items = []
                 purchase_invoice_item = PurchaseInvoiceItem.objects.filter(item=ingredient.item.id, quantity__gt=0).order_by('created_at')
@@ -356,7 +358,7 @@ class OrderCUV2(graphene.Mutation):
                         break
                     
                     needed_items.append(needed_item)
-                    temp +=needed_item.quantity
+                    temp += needed_item.quantity
 
                 if  temp < required_stock:
                     raise GraphQLError(f"Not enough {ingredient.item.name} in stock.")
@@ -385,6 +387,8 @@ class OrderCUV2(graphene.Mutation):
                             purchase_invoice_item=needed_item,
                             quantity=temp2,
                         )
+
+                        print(393, needed_item.quantity,temp2 , needed_item.quantity - temp2)
                         needed_item.quantity  = needed_item.quantity - temp2
                         needed_item.save()
                         temp2 = 0
@@ -414,6 +418,8 @@ class OrderCUV2(graphene.Mutation):
         return round(total_amount, 5),round(amount, 5) 
     def _restore_stock_and_delete_items(order):
         """Restore stock for existing order items and delete them."""
+       
+
         existing_items = OrderProduct.objects.filter(order=order)
         for item in existing_items:
             # Restore stock for each ingredient
@@ -434,6 +440,8 @@ class OrderCUV2(graphene.Mutation):
 
             # Delete the item from order
             item.delete()
+
+        
 
     def _book_table(table_bookings, order):
         booking_expired()
@@ -476,6 +484,79 @@ class OrderCUV2(graphene.Mutation):
         release_expired_bookings.apply_async(
                     countdown=duration_minutes * 60          
                 )
+    
+
+class OrderCancel(graphene.Mutation):
+    class Arguments:
+        order_id = graphene.ID(required=True)
+    
+    message = graphene.String()
+    success = graphene.Boolean()
+    order = graphene.Field(OrderType)
+
+    @isAuthenticated(
+            [
+                UserRole.ADMIN, UserRole.MANAGER
+            ]
+    )
+    def mutate(root, info, order_id):
+        try:
+            with transaction.atomic():
+               
+                OrderCUV2._validate_order_status(order_id)
+                order= OrderCancel._get_order(order_id)
+                OrderCancel._update_stock(order)
+                OrderCancel._booked_table_free(order=order)
+                order.status = ORDER_STATUS_CHOICES.CANCELLED
+                order.save()
+                return OrderCancel(message="Success", success=True, order=order)
+        except Exception as e:
+            print(e)
+            raise GraphQLError(message=e)
+            
+
+    def _get_order(order_id):
+        """Retrieve existing order or create a new one."""
+        order =  Order.objects.get(order_id=order_id)
+        if not order:
+            raise GraphQLError(message='Order does not exist.')
+        return order
+
+   
+
+    def _update_stock(order):
+        """Restore stock for existing order items and delete them."""
+       
+
+        existing_items = OrderProduct.objects.filter(order=order)
+        for item in existing_items:
+            # Restore stock for each ingredient
+            ingredients = Ingredient.objects.filter(product=item.product)
+            for ingredient in ingredients:
+                ingredient.item.current_stock += ingredient.quantity * item.quantity
+                ingredient.item.save()
+                order_ingredient = OrderIngredients.objects.get(
+                    order_product = item.id,
+                    item = ingredient.item,
+                )
+                invoice_consumption = InvoiceConsumption.objects.get( order_ingredients_consumption=order_ingredient.id )
+                invoice_consumption.purchase_invoice_item.quantity +=order_ingredient.quantity
+                invoice_consumption.purchase_invoice_item.save()
+                
+                order_ingredient.delete()
+                invoice_consumption.delete()
+
+        
+
+    def _booked_table_free( order):
+        booking_expired()
+        booked_tables = TableBooking.objects.filter(order=order.id)
+        for table in booked_tables:
+            table = FloorTable.objects.get(id=table.floor_table.id)
+            table.is_booked = False
+            table.save()
+            booked_tables.delete()
+
     
 
 class OrderCUD(DjangoFormMutation):
@@ -555,8 +636,6 @@ class OrderTypeUpdate(graphene.Mutation) :
             order.save()
         return OrderTypeUpdate(success=True, message="Success!")
     
-
-
 
 class OrderProductCUD(DjangoFormMutation):
     success = graphene.Boolean()
@@ -756,3 +835,4 @@ class Mutation(graphene.ObjectType):
     ingredient_cud = IngredientCUD.Field()
     check_ingredient_available = CheckIngredientAvailable.Field()
     order_cuv2 = OrderCUV2.Field()
+    order_cancel = OrderCancel.Field()

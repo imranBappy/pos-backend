@@ -99,7 +99,7 @@ def isAuthenticated(roles=None):
                 raise GraphQLError(f"Authentication failed: {str(e)}")
             
             if not user.is_active:
-                    raise GraphQLError(f"Your account is inactive.")
+                    raise GraphQLError("Your account is inactive.")
             
             # Attach user and authentication status to the context
             info.context.User = user
@@ -112,7 +112,7 @@ def isAuthenticated(roles=None):
                 raise GraphQLError("You do not have the required permissions to access this resource")
                 
             user_role = user.role.name
-            if not user_role  in roles:
+            if not (user_role in roles):
                 raise GraphQLError("You do not have the required permissions to access this resource")
                 
             return func(root, info, *args, **kwargs)

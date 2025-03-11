@@ -16,6 +16,24 @@ class UserForm(forms.ModelForm):
             'role',
             'is_active'
         ]
+class StaffForm(forms.ModelForm):
+    id = forms.CharField(required=False)
+    is_staff = forms.BooleanField(required=False)
+    
+    class Meta:
+        model =  User
+        fields = [
+            'name',
+            'email',
+            'password',
+            'gender',
+            'date_of_birth',
+            'photo',
+            'phone',
+            'role',
+            'is_active',
+            'is_staff'
+        ]
 class AddressForm(forms.ModelForm):
     id = forms.CharField(required=False)
     address_type = forms.CharField(required=False)

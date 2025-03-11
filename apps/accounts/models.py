@@ -72,7 +72,7 @@ class User(
     phone = models.CharField(max_length=15, blank=True, null=True, unique=True)
     
     outlet = models.ForeignKey(Outlet, blank=True, null=True, related_name='users' , on_delete=models.SET_NULL)
-            
+        
     is_verified = models.BooleanField(default=False)
     term_and_condition_accepted = models.BooleanField(default=False)
     privacy_policy_accepted = models.BooleanField(default=False)
@@ -115,7 +115,6 @@ class UserOTP(models.Model):
 class AddressTypeChoices(models.TextChoices):
     HOME = 'HOME', 'Home'
     OFFICE = 'OFFICE', 'Office'
-from django.core.exceptions import ValidationError
 
 class Address(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE,  related_name='address')

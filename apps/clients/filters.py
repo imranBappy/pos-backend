@@ -1,8 +1,5 @@
-
 import django_filters
-
-from bases.filters import BaseFilters
-
+from base.filters import BaseFilters
 from apps.clients.models import Client, ClientDetails
 
 

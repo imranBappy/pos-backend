@@ -1,9 +1,18 @@
 from graphene_django.types import DjangoObjectType
 import graphene
-from .models import Ingredient, TableBooking, Product, Category, Order, OrderProduct,Floor, FloorTable, ExtraFood, Payment
-from .filters import IngredientFilter, TableBookingFilter, ProductFilter, CategoryFilter, OrderFilter, OrderProductFilter ,FloorFilter, FloorTableFilter,  PaymentFilter
+from .models import OrderIngredients, Ingredient, TableBooking, Product, Category, Order, OrderProduct,Floor, FloorTable, ExtraFood, Payment
+from .filters import OrderIngredientsFilter, IngredientFilter, TableBookingFilter, ProductFilter, CategoryFilter, OrderFilter, OrderProductFilter ,FloorFilter, FloorTableFilter,  PaymentFilter
 from backend.count_connection import CountConnection
 from apps.accounts.objectType import UserType
+
+
+class OrderIngredientsType(DjangoObjectType):
+    id = graphene.ID(required=True)
+    class Meta:
+        model = OrderIngredients
+        filterset_class = OrderIngredientsFilter
+        interfaces = (graphene.relay.Node,)
+        connection_class = CountConnection
 
 class TableBookingType(DjangoObjectType):
     id = graphene.ID(required=True)
