@@ -24,7 +24,7 @@ class Command(BaseCommand):
             tenant = Client.objects.get(schema_name=schema_name)
         except Client.DoesNotExist:
             self.stdout.write(self.style.ERROR(f'Tenant with schema name {schema_name} does not exist'))
-            self.stdout.write(self.style.NOTICE(f'Create client from django-admin plane and try again'))
+            self.stdout.write(self.style.NOTICE('Create client from django-admin plane and try again'))
             return
 
         with schema_context(schema_name):

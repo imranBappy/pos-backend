@@ -1,7 +1,6 @@
 from django.db import models
 from django_tenants.models import DomainMixin, TenantMixin
 from easy_thumbnails.fields import ThumbnailerImageField
-from apps.accounts.models import User
 
 
 class Client(TenantMixin):

@@ -199,6 +199,8 @@ class LoginUser(graphene.Mutation):
     @staticmethod
     def mutate(root, info, email, password):
         try:
+            # print("info : ", info.schema.name)
+            # print(CustomUser.objects.all())
             if not email:
                 return GraphQLError("Invalid email or password.",)
             user = CustomUser.objects.get(email=email.lower()) 

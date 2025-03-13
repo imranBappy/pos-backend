@@ -368,7 +368,7 @@ class CreateWaste(graphene.Mutation):
                 # Step 5: Update estimated_cost
                 waste.estimated_cost = estimated_cost
                 waste.save()
-
+                
                 return CreateWaste(success=True)
         except Exception as e:
             print(e)

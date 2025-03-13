@@ -32,6 +32,11 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 ALLOWED_HOSTS = ["*"]
 CORS_ALLOW_ALL_ORIGINS = True
 
+CSRF_TRUSTED_ORIGINS =[
+    'https://mumin.world',
+    'http://localhost:3000'
+]
+
 
 WEBSITE_URL = config('WEBSITE_URL', 'http://localhost:3000')
 
